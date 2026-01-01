@@ -4,6 +4,7 @@ import { config } from "dotenv";
 import express from "express";
 import "express-fileupload";
 import fileUpload from "express-fileupload";
+import { createTables } from "./utils/createTables.js";
 
 const app = express();
 
@@ -25,5 +26,7 @@ app.use(fileUpload({
     useTempFiles: true,
     tempFileDir: "./uploads",
 }))
+
+createTables();
 
 export default app;

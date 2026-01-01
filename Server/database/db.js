@@ -3,10 +3,10 @@ const { Client } = pkg;
 
 const database = new Client({
     user: "postgres",
-    host: "localhost",
-    database: "mern_ecommerce_store",
-    password: "12345678",
-    port: 5432,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: "password",
+    port: process.env.DB_PORT,
 });
 
 try {
