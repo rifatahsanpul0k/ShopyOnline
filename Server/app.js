@@ -4,6 +4,8 @@ import { config } from "dotenv";
 import express from "express";
 import "express-fileupload";
 import fileUpload from "express-fileupload";
+import { errorMiddleware } from "./middlewares/errorMiddleware.js";
+import authRouter from "./router/authRoutes.js";
 import { createTables } from "./utils/createTables.js";
 
 const app = express();
@@ -25,8 +27,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload({
     useTempFiles: true,
     tempFileDir: "./uploads",
-}))
+}));
+
+app.use("/api/v1/auth", authRouter);
 
 createTables();
+
+app.use(errorMiddleware);
 
 export default app;
