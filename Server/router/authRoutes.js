@@ -1,13 +1,13 @@
 import express from "express";
 import {
-    forgotPassword,
-    getUser,
-    login,
-    logout,
-    register,
-    resetPassword,
-    updatePassword,
-    updateProfile,
+  forgotPassword,
+  getUser,
+  login,
+  logout,
+  register,
+  resetPassword,
+  updatePassword,
+  updateProfile,
 } from "../controllers/authController.js";
 import { isAuthenticated } from "../middlewares/authMiddleware.js";
 
@@ -15,7 +15,8 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
-router.get("/getUser", isAuthenticated, getUser);
+router.get("/me", isAuthenticated, getUser);
+router.get("/getUser", isAuthenticated, getUser); // Keep for backward compatibility
 router.get("/logout", isAuthenticated, logout);
 router.post("/password/forgot", forgotPassword);
 router.put("/password/reset/:token", resetPassword);
