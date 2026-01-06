@@ -1,110 +1,132 @@
-import { Menu, User, ShoppingCart, Sun, Moon, Search } from "lucide-react";
-import { useTheme } from "../../contexts/ThemeContext";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  toggleSidebar,
-  toggleSearchOverlay,
-  toggleLoginModal,
-  toggleProfilePanel,
-  toggleCart
-} from "../../store/slices/popupSlice";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Search, ShoppingCart, User, Menu, X, LogOut } from "lucide-react";
+import { useSelector, useDispatch } from "react-redux";
+import { logoutUser } from "../../store/slices/authSlice";
 
 const Navbar = () => {
-  const { theme, toggleTheme } = useTheme();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dispatch = useDispatch();
+  const { authUser } = useSelector((state) => state.auth);
 
-  const { cart } = useSelector((state) => state.cart);
-  const { user } = useSelector((state) => state.auth);
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+  };
 
-  let cartItemsCount = 0;
-
-  if(cart) {
-    cartItemsCount = cart.reduce((total, item) => total + item.quantity, 0);
-  }
-
-  return(
-    <nav
-      className="fixed left-0 w-full top-0 z-[9998] bg-background/80 backdrop-blur-md border-b border-border pointer-events-auto"
-      style={{ pointerEvents: 'auto' }}
-    >
-      <div className="max-w-7xl mx-auto px-4" style={{ pointerEvents: 'auto' }}>
-        <div className="flex items-center justify-between h-16" style={{ pointerEvents: 'auto' }}>
-          {/* Left Section */}
-          <button
-            onClick={() => {
-              dispatch(toggleSidebar());
-            }}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors pointer-events-auto"
-            style={{ pointerEvents: 'auto' }}
-            aria-label="Toggle menu"
-          >
-            <Menu className="h-6 w-6 text-foreground" />
-          </button>          {/* Center Section */}
-          <div className="flex-1 flex justify-center">
-            <h1 className="text-2xl font-bold text-foreground">ShopyOnline</h1>
-          </div>
-
-          {/* Right Section */}
-          <div className="flex items-center space-x-2">
-            {/* Search Button */}
-            <button
-              onClick={() => dispatch(toggleSearchOverlay())}
-              className="p-2 rounded-lg hover:bg-secondary transition-colors pointer-events-auto"
-              style={{ pointerEvents: 'auto' }}
-              aria-label="Search"
-            >
-              <Search className="h-5 w-5 text-foreground" />
-            </button>
-
-            {/* Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-secondary transition-colors pointer-events-auto"
-              style={{ pointerEvents: 'auto' }}
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5 text-foreground" />
-              ) : (
-                <Moon className="h-5 w-5 text-foreground" />
-              )}
-            </button>
-
-            {/* User Profile Button */}
-            <button
-              onClick={() => {
-                if (user) {
-                  dispatch(toggleProfilePanel());
-                } else {
-                  dispatch(toggleLoginModal());
-                }
-              }}
-              className="p-2 rounded-lg hover:bg-secondary transition-colors pointer-events-auto relative z-[9999]"
-              aria-label="User profile"
-              type="button"
-            >
-              <User className="h-5 w-5 text-foreground" />
-            </button>
-
-            {/* Shopping Cart Button with Badge */}
-            <button
-              onClick={() => dispatch(toggleCart())}
-              className="p-2 rounded-lg hover:bg-secondary transition-colors relative pointer-events-auto"
-              style={{ pointerEvents: 'auto' }}
-              aria-label="Shopping cart"
-            >
-              <ShoppingCart className="h-5 w-5 text-foreground" />
-              {cartItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItemsCount > 99 ? "99+" : cartItemsCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-        </div>
+  return (
+    <div className="w-full relative z-50">
+      {/* Top Banner */}
+      <div className="bg-black text-white py-2 px-4 text-center text-sm relative">
+        <p className="text-xs sm:text-sm">
+          Sign up and get 20% off to your first order.
+          <Link to="/auth/register" className="underline font-medium ml-2">
+            Sign Up Now
+          </Link>
+        </p>
+        <button className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:block">
+          <X size={16} />
+        </button>
       </div>
-    </nav>
+
+      {/* Main Navbar */}
+      <nav className="bg-white py-6 px-6 lg:px-12 border-b border-gray-200">
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-8">
+          {/* Mobile Menu & Logo */}
+          <div className="flex items-center gap-4">
+            <button
+              className="lg:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <Menu size={24} />
+            </button>
+            <Link
+              to="/"
+              className="text-2xl lg:text-3xl font-heading font-bold tracking-tighter"
+            >
+              SHOPYONLINE
+            </Link>
+          </div>
+
+          {/* Desktop Links */}
+          <div className="hidden lg:flex items-center gap-6 text-base">
+            <Link to="/products?sort=new" className="hover:text-gray-600">
+              New Arrivals
+            </Link>
+            <Link to="/products?sort=sale" className="hover:text-gray-600">
+              On Sale
+            </Link>
+            <Link to="/products" className="hover:text-gray-600">
+              Shop
+            </Link>
+            <Link to="/brands" className="hover:text-gray-600">
+              Brands
+            </Link>
+          </div>
+
+          {/* Search Bar */}
+          <div className="hidden lg:flex flex-1 max-w-xl bg-gray-100 rounded-pill px-4 py-3 items-center gap-3">
+            <Search className="text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search for products..."
+              className="bg-transparent border-none outline-none w-full text-sm placeholder-gray-400"
+            />
+          </div>
+
+          {/* Icons & Auth */}
+          <div className="flex items-center gap-4">
+            <Link to="/cart" className="hover:text-gray-600 relative">
+              <ShoppingCart size={24} />
+              {/* Cart Counter Badge could go here */}
+            </Link>
+
+            {authUser ? (
+              <div className="flex items-center gap-4">
+                <Link
+                  to="/profile"
+                  className="hover:text-gray-600 flex items-center gap-2"
+                >
+                  {authUser?.avatar?.url ? (
+                    <img
+                      src={authUser.avatar.url}
+                      alt={authUser.name}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User size={24} />
+                  )}
+                  <span className="hidden sm:inline text-sm font-medium">
+                    {authUser.name}
+                  </span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="hover:opacity-70 transition-opacity"
+                  title="Logout"
+                >
+                  <LogOut size={24} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/auth/login"
+                  className="px-4 py-2 text-sm font-medium rounded-pill hover:opacity-70 transition-opacity"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/auth/register"
+                  className="px-4 py-2 text-sm font-medium bg-black text-white rounded-pill hover:opacity-90 transition-opacity"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+    </div>
   );
 };
 

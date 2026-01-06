@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { axiosInstance } from "../../lib/axios";
 import { toast } from "react-toastify";
-import { toggleLoginModal } from "./popupSlice";
 
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
@@ -25,8 +24,7 @@ export const loginUser = createAsyncThunk(
     try {
       const res = await axiosInstance.post("/auth/login", data);
       toast.success(res.data.message || "Login successful!");
-      // Close the login modal
-      thunkAPI.dispatch(toggleLoginModal());
+      // Modal closing is handled by LoginModal.jsx only
       return res.data;
     } catch (error) {
       const message = error.response?.data?.message || "Login failed";
@@ -161,6 +159,9 @@ const authSlice = createSlice({
         state.isSigningUp = false;
         state.user = action.payload.user;
         state.authUser = action.payload.user;
+        if (action.payload.token) {
+          localStorage.setItem("token", action.payload.token);
+        }
       })
       .addCase(registerUser.rejected, (state) => {
         state.isSigningUp = false;
@@ -173,6 +174,9 @@ const authSlice = createSlice({
         state.isLoggingIn = false;
         state.user = action.payload.user;
         state.authUser = action.payload.user;
+        if (action.payload.token) {
+          localStorage.setItem("token", action.payload.token);
+        }
       })
       .addCase(loginUser.rejected, (state) => {
         state.isLoggingIn = false;
@@ -199,6 +203,7 @@ const authSlice = createSlice({
         state.isLoggingIn = false;
         state.user = null;
         state.authUser = null;
+        localStorage.removeItem("token");
       })
       .addCase(logoutUser.rejected, (state) => {
         state.isLoggingIn = false;
