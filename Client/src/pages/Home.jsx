@@ -2,7 +2,17 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Button from "../components/ui/Button";
-import { Star, ChevronRight, Zap, Truck, RotateCcw, Award } from "lucide-react";
+import {
+  Star,
+  ChevronRight,
+  Zap,
+  Truck,
+  RotateCcw,
+  Award,
+  ShoppingBag,
+  Heart,
+  Settings,
+} from "lucide-react";
 
 // Dummy Data for Preview
 const NEW_ARRIVALS = [
@@ -278,10 +288,10 @@ const Home = () => {
         <section className="py-20 px-6 lg:px-12 max-w-[1440px] mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
             {/* Your Orders */}
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-3xl p-8 border-2 border-blue-200">
+            <div className="bg-white rounded-3xl p-8 border-2 border-black shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                  <ChevronRight className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
+                  <ShoppingBag className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-2xl font-heading font-bold text-black">
                   Your Orders
@@ -297,11 +307,11 @@ const Home = () => {
               </Link>
             </div>
 
-            {/* Wishlist */}
-            <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-3xl p-8 border-2 border-pink-200">
+            {/* Favorites */}
+            <div className="bg-white rounded-3xl p-8 border-2 border-black shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center">
-                  <Star className="w-6 h-6 text-white fill-white" />
+                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-white fill-white" />
                 </div>
                 <h3 className="text-2xl font-heading font-bold text-black">
                   Favorites
@@ -318,10 +328,10 @@ const Home = () => {
             </div>
 
             {/* Account Settings */}
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-3xl p-8 border-2 border-purple-200">
+            <div className="bg-white rounded-3xl p-8 border-2 border-black shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                  <Award className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-2xl font-heading font-bold text-black">
                   Account
@@ -338,9 +348,9 @@ const Home = () => {
             </div>
 
             {/* Exclusive Deals */}
-            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-3xl p-8 border-2 border-yellow-200">
+            <div className="bg-white rounded-3xl p-8 border-2 border-black shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
                   <Zap className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-2xl font-heading font-bold text-black">

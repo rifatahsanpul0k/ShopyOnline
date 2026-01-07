@@ -1,0 +1,72 @@
+# Dependencies
+node_modules/
+npm-debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Production
+dist/
+build/
+.next/
+out/
+
+# Misc
+.DS_Store
+*.pem
+.env.local
+.env.*.local
+
+# Testing
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Build artifacts
+dist/
+build/
+*.o
+*.a
+*.so
+
+# Package manager locks (optional - uncomment if you want to ignore)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Environment variables - EXCEPT .env
+.env.example
+.env.test
+.env.production
+.env.development
+
+# Uploads and temp files
+Server/uploads/
+Client/uploads/
+uploads/
+
+# Cache
+.cache/
+.eslintcache
