@@ -13,12 +13,14 @@ export const createOrder = catchAsyncErrors(async (req, res, next) => {
   }
 
   if (!totalPrice || !shippingInfo) {
-    return next(new ErrorHandler("Please provide all required information", 400));
+    return next(
+      new ErrorHandler("Please provide all required information", 400)
+    );
   }
 
   try {
     // Start transaction
-    const client = await database.getClient?.() || database;
+    const client = (await database.getClient?.()) || database;
 
     // Create order
     const orderResult = await database.query(
@@ -40,7 +42,8 @@ export const createOrder = catchAsyncErrors(async (req, res, next) => {
     }
 
     // Add shipping info
-    const { fullName, state, city, country, address, pincode, phone } = shippingInfo;
+    const { fullName, state, city, country, address, pincode, phone } =
+      shippingInfo;
     await database.query(
       `INSERT INTO shipping_info (order_id, full_name, state, city, country, address, pincode, phone)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -71,7 +74,7 @@ export const getUserOrders = catchAsyncErrors(async (req, res, next) => {
   try {
     // Get all orders for the user with related data
     const ordersResult = await database.query(
-      `SELECT 
+      `SELECT
         o.id,
         o.total_price as total,
         o.tax_price as tax,
@@ -124,16 +127,14 @@ export const getUserOrders = catchAsyncErrors(async (req, res, next) => {
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
-});
-
-// Get Single Order
+});// Get Single Order
 export const getOrderById = catchAsyncErrors(async (req, res, next) => {
   const { orderId } = req.params;
   const userId = req.user.id;
 
   try {
     const orderResult = await database.query(
-      `SELECT 
+      `SELECT
         o.id,
         o.total_price as total,
         o.tax_price as tax,
@@ -183,9 +184,7 @@ export const getOrderById = catchAsyncErrors(async (req, res, next) => {
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
-});
-
-// Update Order Status (Admin only)
+});// Update Order Status (Admin only)
 export const updateOrderStatus = catchAsyncErrors(async (req, res, next) => {
   const { orderId } = req.params;
   const { status } = req.body;
@@ -272,7 +271,7 @@ export const cancelOrder = catchAsyncErrors(async (req, res, next) => {
 export const getAllOrders = catchAsyncErrors(async (req, res, next) => {
   try {
     const ordersResult = await database.query(
-      `SELECT 
+      `SELECT
         o.id,
         o.buyer_id,
         o.total_price as total,
@@ -311,7 +310,7 @@ export const getAllOrders = catchAsyncErrors(async (req, res, next) => {
 export const getOrderStats = catchAsyncErrors(async (req, res, next) => {
   try {
     const statsResult = await database.query(
-      `SELECT 
+      `SELECT
         COUNT(*) as total_orders,
         SUM(total_price) as total_revenue,
         COUNT(CASE WHEN order_status = 'Delivered' THEN 1 END) as delivered_orders,

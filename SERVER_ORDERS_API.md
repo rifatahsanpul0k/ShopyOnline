@@ -238,9 +238,9 @@ All errors follow this format:
 ### JavaScript/React
 
 ```javascript
-import { 
-  createOrderAPI, 
-  getUserOrdersAPI, 
+import {
+  createOrderAPI,
+  getUserOrdersAPI,
   getOrderByIdAPI,
   cancelOrderAPI,
   updateOrderStatusAPI,

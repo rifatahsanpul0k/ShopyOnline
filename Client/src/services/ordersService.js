@@ -1,4 +1,4 @@
-import axios from "./axios.js";
+import { axiosInstance as axios } from "../lib/axios.js";
 
 const API_URL = "/api/v1/orders";
 
@@ -55,7 +55,9 @@ export const getAllOrdersAPI = async () => {
 // Admin: Update order status
 export const updateOrderStatusAPI = async (orderId, status) => {
   try {
-    const response = await axios.put(`${API_URL}/${orderId}/status`, { status });
+    const response = await axios.put(`${API_URL}/${orderId}/status`, {
+      status,
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error;

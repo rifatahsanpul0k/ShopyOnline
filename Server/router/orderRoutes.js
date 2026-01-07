@@ -8,7 +8,10 @@ import {
   getUserOrders,
   updateOrderStatus,
 } from "../controllers/ordersController.js";
-import { isAuthenticated, authorizedRoles } from "../middlewares/authMiddleware.js";
+import {
+  isAuthenticated,
+  authorizedRoles,
+} from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -20,7 +23,17 @@ router.put("/:orderId/cancel", isAuthenticated, cancelOrder);
 
 // Admin routes
 router.get("/", isAuthenticated, authorizedRoles("Admin"), getAllOrders);
-router.put("/:orderId/status", isAuthenticated, authorizedRoles("Admin"), updateOrderStatus);
-router.get("/stats/overview", isAuthenticated, authorizedRoles("Admin"), getOrderStats);
+router.put(
+  "/:orderId/status",
+  isAuthenticated,
+  authorizedRoles("Admin"),
+  updateOrderStatus
+);
+router.get(
+  "/stats/overview",
+  isAuthenticated,
+  authorizedRoles("Admin"),
+  getOrderStats
+);
 
 export default router;
