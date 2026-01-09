@@ -127,7 +127,7 @@ export const getUserOrders = catchAsyncErrors(async (req, res, next) => {
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
-});// Get Single Order
+}); // Get Single Order
 export const getOrderById = catchAsyncErrors(async (req, res, next) => {
   const { orderId } = req.params;
   const userId = req.user.id;
@@ -184,7 +184,7 @@ export const getOrderById = catchAsyncErrors(async (req, res, next) => {
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
-});// Update Order Status (Admin only)
+}); // Update Order Status (Admin only)
 export const updateOrderStatus = catchAsyncErrors(async (req, res, next) => {
   const { orderId } = req.params;
   const { status } = req.body;
