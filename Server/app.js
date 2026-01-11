@@ -7,6 +7,7 @@ import fileUpload from "express-fileupload";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import authRouter from "./router/authRoutes.js";
 import orderRouter from "./router/orderRoutes.js";
+import productRouter from "./router/productRoutes.js";
 import { createTables } from "./utils/createTables.js";
 
 const app = express();
@@ -33,6 +34,7 @@ app.use(
 );
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/product", productRouter);
 app.use("/api/v1/orders", orderRouter);
 
 createTables();
