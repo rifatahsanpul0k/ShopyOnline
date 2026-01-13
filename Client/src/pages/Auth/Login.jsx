@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../../store/slices/authSlice";
@@ -12,14 +12,29 @@ const Login = () => {
   });
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isLoggingIn } = useSelector((state) => state.auth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("🔐 Login attempt with:", formData.email);
+
     const result = await dispatch(loginUser(formData));
+    console.log("Login result:", result);
+
     if (result.payload?.user) {
+      console.log("✅ Login successful!");
       setFormData({ email: "", password: "" });
-      navigate("/");
+
+      // Check if there's a redirect parameter
+      const redirectTo = searchParams.get("redirect");
+      if (redirectTo) {
+        navigate(redirectTo);
+      } else {
+        navigate("/");
+      }
+    } else {
+      console.log("❌ Login failed - error handled by interceptor");
     }
   };
 
@@ -34,7 +49,11 @@ const Login = () => {
           <p className="text-gray-600">
             Don't have an account?{" "}
             <Link
-              to="/auth/register"
+              to={`/auth/register${
+                searchParams.get("redirect")
+                  ? `?redirect=${searchParams.get("redirect")}`
+                  : ""
+              }`}
               className="text-black font-medium hover:opacity-70 transition-opacity"
             >
               Register
