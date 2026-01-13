@@ -274,3 +274,40 @@ export const deleteProduct = catchAsyncErrors(async (req, res, next) => {
         message: "Product deleted successfully.",
     });
 });
+
+
+// For fetching a single product by ID----->
+export const fetchSingleProduct = catchAsyncErrors(async (req, res, next) => {
+    const { productId } = req.params;
+
+    // Query to fetch product details along with associated reviews and reviewer information
+    const result = await database.query(
+        `
+        SELECT p.*,
+        COALESCE(
+        json_agg(
+        json_build_object(
+            'review_id', r.id,
+            'rating', r.rating,
+            'comment', r.comment,
+            'reviewer', json_build_object(
+            'id', u.id,
+            'name', u.name,
+            'avatar', u.avatar
+            )) 
+        ) FILTER (WHERE r.id IS NOT NULL), '[]') AS reviews
+         FROM products p
+         LEFT JOIN reviews r ON p.id = r.product_id
+         LEFT JOIN users u ON r.user_id = u.id
+         WHERE p.id  = $1
+         GROUP BY p.id`,
+        [productId]
+    );
+
+    // Send response
+    res.status(200).json({
+        success: true,
+        message: "Product fetched successfully.",
+        product: result.rows[0],
+    });
+});
