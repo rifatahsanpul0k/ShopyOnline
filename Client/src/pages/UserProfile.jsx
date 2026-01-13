@@ -25,6 +25,7 @@ import {
   Upload,
   User,
   Loader,
+  ArrowLeft,
 } from "lucide-react";
 import Button from "../components/ui/Button";
 
@@ -247,6 +248,15 @@ const UserProfile = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-[1440px] mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-600 hover:text-black transition mb-6 font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back
+        </button>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl lg:text-5xl font-bold text-black mb-2">

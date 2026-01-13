@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Star } from "lucide-react";
+import { Star, ArrowLeft } from "lucide-react";
 import { formatPrice } from "../utils/currencyFormatter";
 
 const Products = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
     category: searchParams.get("category") || "",
@@ -57,6 +58,15 @@ const Products = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-600 hover:text-black transition mb-6 font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back
+        </button>
+
         <h1 className="text-4xl font-bold mb-12">Products</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

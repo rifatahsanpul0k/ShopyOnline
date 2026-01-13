@@ -141,6 +141,15 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-white py-12 px-4">
       <div className="max-w-[1440px] mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-600 hover:text-black transition mb-6 font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back
+        </button>
+
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-5xl font-heading font-bold text-black mb-2">
