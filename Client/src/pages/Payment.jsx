@@ -39,8 +39,8 @@ const Payment = () => {
     // POST /api/v1/payments/create-intent
     // Body: {
     //   orderId: paymentData.orderId,
-    //   amount: paymentData.orderSummary.total, // Amount in Taka
-    //   currency: 'bdt',
+    //   amount: paymentData.orderSummary.total, // Amount in USD
+    //   currency: 'usd',
     //   metadata: {
     //     userId: authUser.id,
     //     items: paymentData.orderSummary.items

@@ -46,16 +46,20 @@ const Navbar = () => {
 
           {/* Icons & Auth */}
           <div className="flex items-center gap-4">
-            <Link to="/cart" className="hover:text-gray-600 relative">
-              <ShoppingCart size={24} />
-              {/* Cart Counter Badge could go here */}
-            </Link>
+            {/* Only show cart button when user is logged in */}
+            {authUser && (
+              <Link to="/cart" className="hover:text-gray-600 relative">
+                <ShoppingCart size={24} />
+                {/* Cart Counter Badge could go here */}
+              </Link>
+            )}
 
             {authUser ? (
               <div className="flex items-center gap-4">
                 <Link
                   to="/profile"
-                  className="hover:text-gray-600 flex items-center gap-2"
+                  className="hover:opacity-70 transition-opacity"
+                  title={authUser.name}
                 >
                   {authUser?.avatar?.url ? (
                     <img
@@ -66,9 +70,6 @@ const Navbar = () => {
                   ) : (
                     <User size={24} />
                   )}
-                  <span className="hidden sm:inline text-sm font-medium">
-                    {authUser.name}
-                  </span>
                 </Link>
                 <button
                   onClick={handleLogout}

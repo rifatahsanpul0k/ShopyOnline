@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Lock, ArrowLeft } from "lucide-react";
+import { Lock } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { resetPassword } from "../../store/slices/authSlice";
 import Button from "../../components/ui/Button";
@@ -36,17 +36,8 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate("/auth/login")}
-          className="flex items-center gap-2 text-gray-600 hover:text-black transition font-medium"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Login
-        </button>
-
+    <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md mx-auto space-y-6">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-5xl font-heading font-bold text-black mb-2">

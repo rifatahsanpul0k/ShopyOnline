@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
-import { User, Mail, ArrowLeft } from "lucide-react";
+import { User, Mail } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { updateProfile } from "../../store/slices/authSlice";
 import Button from "../../components/ui/Button";
 
 const UpdateProfile = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { authUser, isUpdatingProfile } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
@@ -54,17 +52,8 @@ const UpdateProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white py-12">
+    <div className="min-h-screen bg-white py-8 px-4">
       <div className="max-w-md mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 hover:text-black transition mb-6 font-medium"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back
-        </button>
-
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-5xl font-heading font-bold text-black">

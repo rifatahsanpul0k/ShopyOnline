@@ -1,20 +1,20 @@
 /**
- * Format price in Bangladeshi Taka (BDT)
+ * Format price in US Dollars (USD)
  * @param {number} amount - The amount to format
  * @returns {string} - Formatted price string
  */
 export const formatPrice = (amount) => {
   if (amount === null || amount === undefined || isNaN(amount)) {
-    return "৳0";
+    return "$0";
   }
 
   // Format with commas for thousands
-  const formatted = new Intl.NumberFormat("en-BD", {
-    minimumFractionDigits: 0,
+  const formatted = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
 
-  return `৳${formatted}`;
+  return `$${formatted}`;
 };
 
 /**
@@ -27,8 +27,8 @@ export const formatNumber = (amount) => {
     return "0";
   }
 
-  return new Intl.NumberFormat("en-BD", {
-    minimumFractionDigits: 0,
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
 };

@@ -54,7 +54,7 @@ const FEATURED_TECH = [
   },
   {
     id: 2,
-    name: 'ASUS TUF Gaming VG249Q1A 24" Monitor',
+    name: 'Gaming Monitor 24" 165Hz',
     price: 240,
     rating: 4.8,
     specs: ["165Hz Refresh Rate", "IPS Panel", "1ms MPRT"],
@@ -72,7 +72,7 @@ const FEATURED_TECH = [
   },
   {
     id: 4,
-    name: "Intel 13th Gen Core i7-13700K Processor",
+    name: "High-Performance Processor 16-Core",
     price: 420,
     rating: 4.7,
     specs: ["16 Cores", "24 Threads", "5.40 GHz Boost"],
@@ -90,7 +90,7 @@ const FEATURED_TECH = [
   },
   {
     id: 6,
-    name: "Samsung 980 PRO 1TB NVMe SSD",
+    name: "Ultra-Fast 1TB NVMe SSD",
     price: 150,
     rating: 4.8,
     specs: ["7000MB/s Read", "PCIe 4.0", "Heatsink"],
@@ -422,48 +422,9 @@ const Home = () => {
             </div>
           </div>
         </div>
-
-        {/* Brand Carousel */}
-        <div className="bg-black py-12 border-t-2 border-white/10">
-          <div className="max-w-[1440px] mx-auto px-6">
-            <div className="flex justify-between items-center flex-wrap gap-8">
-              {["INTEL", "AMD", "ASUS", "MSI", "SAMSUNG"].map((brand) => (
-                <span
-                  key={brand}
-                  className="text-white text-2xl lg:text-3xl font-black tracking-tighter opacity-40 hover:opacity-100 transition-all duration-300 cursor-default hover:scale-110"
-                >
-                  {brand}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
       </section>
 
-      {/* 2. AUTH CTA */}
-      {!authUser && (
-        <section className="py-12 px-6 bg-black text-white border-y border-white/10">
-          <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-            <h2 className="text-2xl font-bold tracking-tight uppercase">
-              Join the ecosystem for exclusive deals
-            </h2>
-            <div className="flex gap-4">
-              <Link to="/auth/login">
-                <Button className="bg-white !text-black hover:bg-gray-200 border-none font-bold px-8">
-                  LOGIN
-                </Button>
-              </Link>
-              <Link to="/auth/register">
-                <Button className="bg-transparent border-2 border-white !text-white hover:bg-white hover:!text-black transition-colors font-bold px-8">
-                  SIGN UP
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 3. CATEGORIES - Clickable to filter products */}
+      {/* 2. CATEGORIES - Clickable to filter products */}
       <section className="py-24 bg-black text-white">
         <div className="max-w-[1440px] mx-auto px-6">
           <h2 className="text-5xl font-black tracking-tighter uppercase mb-16">
@@ -492,7 +453,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 4. NEW ARRIVALS - Products from last 30 days (max 8) */}
+      {/* 3. NEW ARRIVALS - Products from last 30 days (max 8) */}
       <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto">
         <div className="flex items-end justify-between mb-16">
           <h2 className="text-5xl font-black tracking-tighter uppercase">
@@ -594,7 +555,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 5. TOP RATED PRODUCTS - Rating 4.5 or higher */}
+      {/* 4. TOP RATED PRODUCTS - Rating 4.5 or higher */}
       <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto bg-gray-50">
         <div className="flex items-end justify-between mb-16">
           <h2 className="text-5xl font-black tracking-tighter uppercase">
@@ -696,7 +657,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 6. TRUST FEATURES (Clean Grid) */}
+      {/* 5. TRUST FEATURES (Clean Grid) */}
       <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {[
