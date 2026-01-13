@@ -210,16 +210,25 @@ export const updatePassword = catchAsyncErrors(async (req, res, next) => {
 });
 
 
-// Update Profile-------------->
+// Update Profile -------------->
 export const updateProfile = catchAsyncErrors(async (req, res, next) => {
-    const { name, email } = req.body;
-    if (!name || !email) {
+    const { name, email, phone, address } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !phone || !address) {
         return next(new ErrorHandler("Please provide all required fields.", 400));
     }
-    if (name.trim().length === 0 || email.trim().length === 0) {
-        return next(new ErrorHandler("Name and email cannot be empty.", 400));
+    if (
+        name.trim().length === 0 ||
+        email.trim().length === 0 ||
+        phone.trim().length === 0 ||
+        address.trim().length === 0
+    ) {
+        return next(new ErrorHandler("Fields cannot be empty.", 400));
     }
+
     let avatarData = {};
+    // Handle avatar upload if provided
     if (req.files && req.files.avatar) {
         const { avatar } = req.files;
         if (req.user?.avatar?.public_id) {
@@ -241,18 +250,20 @@ export const updateProfile = catchAsyncErrors(async (req, res, next) => {
     }
 
     let user;
+    // Update user profile in the database
     if (Object.keys(avatarData).length === 0) {
         user = await database.query(
-            "UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *",
-            [name, email, req.user.id]
+            "UPDATE users SET name = $1, email = $2, phone = $3, address = $4 WHERE id = $5 RETURNING *",
+            [name, email, phone, address, req.user.id]
         );
     } else {
         user = await database.query(
-            "UPDATE users SET name = $1, email = $2, avatar = $3 WHERE id = $4 RETURNING *",
-            [name, email, avatarData, req.user.id]
+            "UPDATE users SET name = $1, email = $2, phone = $3, address = $4, avatar = $5 WHERE id = $6 RETURNING *",
+            [name, email, phone, address, avatarData, req.user.id]
         );
     }
 
+    // Send response
     res.status(200).json({
         success: true,
         message: "Profile updated successfully.",
