@@ -44,7 +44,7 @@ export const createProduct = catchAsyncErrors(async (req, res, next) => {
         [
             name,
             description,
-            price,
+            price / 122,
             category,
             stock,
             JSON.stringify(uploadedImages),  // Store as JSON string
@@ -192,5 +192,85 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
         totalProducts,
         newProducts: newProductsResult.rows,
         topRatedProducts: topRatedResult.rows,
+    });
+});
+
+
+// For updating an existing product----->
+export const updateProduct = catchAsyncErrors(async (req, res, next) => {
+    // Get product ID from request parameters
+    const { productId } = req.params;
+    const { name, description, price, category, stock } = req.body;
+
+    // Validate required fields
+    if (!name || !description || !price || !category || !stock) {
+        return next(
+            new ErrorHandler("Please provide complete product details.", 400)
+        );
+    }
+
+    const product = await database.query("SELECT * FROM products WHERE id = $1", [productId,]);
+
+    // Check if product exists
+    if (product.rows.length === 0) {
+        return next(new ErrorHandler("Product not found.", 404));
+    }
+
+    // Update product details in the database
+    const result = await database.query(
+        `UPDATE products SET name = $1, description = $2, price = $3, category = $4, stock = $5 WHERE id = $6 RETURNING *`,
+        [
+            name,
+            description, 
+            price / 122, 
+            category, 
+            stock, 
+            productId
+        ]
+    );
+
+    // Send response
+    res.status(200).json({
+        success: true,
+        message: "Product updated successfully.",
+        updatedProduct: result.rows[0],
+    });
+});
+
+
+// For deleting a product----->
+export const deleteProduct = catchAsyncErrors(async (req, res, next) => {
+    const { productId } = req.params;
+
+    const product = await database.query("SELECT * FROM products WHERE id = $1", [productId,]);
+
+    // Check if product exists
+    if (product.rows.length === 0) {
+        return next(new ErrorHandler("Product not found.", 404));
+    }
+
+    // Get images associated with the product
+    const images = product.rows[0].images;
+
+    // Delete product from the database
+    const deleteResult = await database.query(
+        "DELETE FROM products WHERE id = $1 RETURNING *",[productId]);
+
+    // Check if deletion was successful
+    if (deleteResult.rows.length === 0) {
+        return next(new ErrorHandler("Failed to delete product.", 500));
+    }
+
+    // Delete images from Cloudinary
+    if (images && images.length > 0) {
+        for (const image of images) {
+            await cloudinary.uploader.destroy(image.public_id);
+        }
+    }
+
+    // Send response
+    res.status(200).json({
+        success: true,
+        message: "Product deleted successfully.",
     });
 });
