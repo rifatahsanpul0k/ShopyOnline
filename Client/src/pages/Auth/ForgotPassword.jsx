@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Mail } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, ArrowLeft } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { forgotPassword } from "../../store/slices/authSlice";
 import Button from "../../components/ui/Button";
@@ -8,6 +8,7 @@ import Button from "../../components/ui/Button";
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isRequestingForToken } = useSelector((state) => state.auth);
   const [submitted, setSubmitted] = useState(false);
 
@@ -43,6 +44,15 @@ const ForgotPassword = () => {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-600 hover:text-black transition font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back
+        </button>
+
         {/* Header */}
         <div className="text-center">
           <h1 className="text-5xl font-heading font-bold text-black mb-2">

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { clearCart } from "../store/slices/cartSlice";
-import { Check, Package, Mail, Home } from "lucide-react";
+import { Check, Package, Mail, Home, ArrowLeft } from "lucide-react";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
 
@@ -29,6 +29,15 @@ const PaymentSuccess = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4">
       <div className="max-w-[1440px] mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 text-gray-600 hover:text-black transition mb-6 font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Home
+        </button>
+
         {/* Success Animation */}
         <div className="flex justify-center mb-8">
           <div className="relative">
