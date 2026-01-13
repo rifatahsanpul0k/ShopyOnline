@@ -52,7 +52,7 @@ const Cart = () => {
     0
   );
   const tax = subtotal * 0.1; // 10% tax
-  const shipping = subtotal > 5000 ? 0 : 500; // Free shipping over ৳5,000
+  const shipping = subtotal > 50 ? 0 : 5; // Free shipping over $50
   const total = subtotal + tax + shipping;
 
   // Handle quantity change
@@ -305,11 +305,11 @@ const Cart = () => {
               </div>
 
               {/* Shipping Info */}
-              {subtotal < 5000 && (
+              {subtotal < 50 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-card p-3 mb-6 flex gap-3">
                   <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-blue-800">
-                    Free shipping on orders over <strong>৳5,000</strong>
+                    Free shipping on orders over <strong>$50</strong>
                   </div>
                 </div>
               )}
