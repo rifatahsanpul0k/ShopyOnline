@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Button from "../components/ui/Button";
+import { formatPrice } from "../utils/currencyFormatter";
 
 // Dummy product for testing
 const DUMMY_PRODUCT = {
@@ -51,7 +52,7 @@ const Cart = () => {
     0
   );
   const tax = subtotal * 0.1; // 10% tax
-  const shipping = subtotal > 100 ? 0 : 10; // Free shipping over $100
+  const shipping = subtotal > 5000 ? 0 : 500; // Free shipping over ৳5,000
   const total = subtotal + tax + shipping;
 
   // Handle quantity change
@@ -232,10 +233,10 @@ const Cart = () => {
                       {/* Price */}
                       <div className="text-right">
                         <div className="text-sm text-gray-600 mb-1">
-                          ${item.price.toFixed(2)} each
+                          {formatPrice(item.price)} each
                         </div>
                         <div className="text-xl font-bold text-black">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          {formatPrice(item.price * item.quantity)}
                         </div>
                       </div>
                     </div>
@@ -265,12 +266,12 @@ const Cart = () => {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{formatPrice(subtotal)}</span>
                 </div>
 
                 <div className="flex justify-between text-gray-600">
                   <span>Tax (10%)</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>{formatPrice(tax)}</span>
                 </div>
 
                 <div className="flex justify-between text-gray-600">
@@ -282,24 +283,24 @@ const Cart = () => {
                       </span>
                     )}
                   </span>
-                  <span>${shipping.toFixed(2)}</span>
+                  <span>{formatPrice(shipping)}</span>
                 </div>
 
                 {/* Divider */}
                 <div className="border-t border-gray-300 pt-4">
                   <div className="flex justify-between text-xl font-bold text-black">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{formatPrice(total)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Shipping Info */}
-              {subtotal < 100 && (
+              {subtotal < 5000 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-card p-3 mb-6 flex gap-3">
                   <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-blue-800">
-                    Free shipping on orders over <strong>$100</strong>
+                    Free shipping on orders over <strong>৳5,000</strong>
                   </div>
                 </div>
               )}

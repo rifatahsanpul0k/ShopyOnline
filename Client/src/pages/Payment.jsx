@@ -9,6 +9,7 @@ import {
 } from "@stripe/react-stripe-js";
 import { Lock, AlertCircle, Check, ArrowLeft, Loader } from "lucide-react";
 import Button from "../components/ui/Button";
+import { formatPrice } from "../utils/currencyFormatter";
 
 // Note: This component requires Stripe setup. See implementation notes below.
 
@@ -38,8 +39,8 @@ const Payment = () => {
     // POST /api/v1/payments/create-intent
     // Body: {
     //   orderId: paymentData.orderId,
-    //   amount: paymentData.orderSummary.total * 100, // Convert to cents
-    //   currency: 'usd',
+    //   amount: paymentData.orderSummary.total, // Amount in Taka
+    //   currency: 'bdt',
     //   metadata: {
     //     userId: authUser.id,
     //     items: paymentData.orderSummary.items
@@ -278,7 +279,7 @@ const Payment = () => {
                   ) : (
                     <>
                       <Lock className="w-5 h-5" />
-                      Pay ${paymentData.orderSummary.total.toFixed(2)}
+                      Pay {formatPrice(paymentData.orderSummary.total)}
                     </>
                   )}
                 </button>
@@ -321,7 +322,7 @@ const Payment = () => {
                       <p className="text-gray-600">x{item.quantity}</p>
                     </div>
                     <p className="font-bold text-black">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      {formatPrice(item.price * item.quantity)}
                     </p>
                   </div>
                 ))}
@@ -331,23 +332,23 @@ const Payment = () => {
               <div className="space-y-3 border-t border-gray-300 pt-4">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${paymentData.orderSummary.subtotal.toFixed(2)}</span>
+                  <span>{formatPrice(paymentData.orderSummary.subtotal)}</span>
                 </div>
 
                 <div className="flex justify-between text-gray-600">
                   <span>Tax</span>
-                  <span>${paymentData.orderSummary.tax.toFixed(2)}</span>
+                  <span>{formatPrice(paymentData.orderSummary.tax)}</span>
                 </div>
 
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>${paymentData.orderSummary.shipping.toFixed(2)}</span>
+                  <span>{formatPrice(paymentData.orderSummary.shipping)}</span>
                 </div>
 
                 <div className="border-t border-gray-300 pt-4">
                   <div className="flex justify-between text-xl font-bold text-black">
                     <span>Total</span>
-                    <span>${paymentData.orderSummary.total.toFixed(2)}</span>
+                    <span>{formatPrice(paymentData.orderSummary.total)}</span>
                   </div>
                 </div>
               </div>
