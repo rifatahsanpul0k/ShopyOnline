@@ -84,9 +84,11 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
     // Filter products by availability status
     if (availability === "in-stock") {
         conditions.push(`stock > 5`);  // More than 5 items considered in-stock
-    } else if (availability === "limited") {
+    }
+    else if (availability === "limited") {
         conditions.push(`stock > 0 AND stock <= 5`);  // 1 to 5 items considered limited stock
-    } else if (availability === "out-of-stock") {
+    }
+    else if (availability === "out-of-stock") {
         conditions.push(`stock = 0`);  // 0 items considered out-of-stock
     }
 
@@ -274,3 +276,303 @@ export const deleteProduct = catchAsyncErrors(async (req, res, next) => {
         message: "Product deleted successfully.",
     });
 });
+
+
+// For fetching a single product by ID----->
+export const fetchSingleProduct = catchAsyncErrors(async (req, res, next) => {
+    const { productId } = req.params;
+
+    // Query to fetch product details along with associated reviews and reviewer information
+    const result = await database.query(
+        `
+        SELECT p.*,
+        COALESCE(
+        json_agg(
+        json_build_object(
+            'review_id', r.id,
+            'rating', r.rating,
+            'comment', r.comment,
+            'reviewer', json_build_object(
+            'id', u.id,
+            'name', u.name,
+            'avatar', u.avatar
+            )) 
+        ) FILTER (WHERE r.id IS NOT NULL), '[]') AS reviews
+         FROM products p
+         LEFT JOIN reviews r ON p.id = r.product_id
+         LEFT JOIN users u ON r.user_id = u.id
+         WHERE p.id  = $1
+         GROUP BY p.id`,
+        [productId]
+    );
+
+    // Send response
+    res.status(200).json({
+        success: true,
+        message: "Product fetched successfully.",
+        product: result.rows[0],
+    });
+});
+
+
+// For posting a product review----->
+export const postProductReview = catchAsyncErrors(async (req, res, next) => {
+    const { productId } = req.params;
+    const { rating, comment } = req.body;
+
+    // Validate required fields
+    if (!rating || !comment) {
+        return next(new ErrorHandler("Please provide rating and comment.", 400));
+    }
+
+    // Check if the user has purchased the product before allowing review
+    const purchasheCheckQuery = 
+    `
+        SELECT oi.product_id
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        JOIN payments p ON p.order_id = o.id
+        WHERE o.buyer_id = $1
+        AND oi.product_id = $2
+        AND p.payment_status = 'Paid'
+        LIMIT 1 
+    `;
+
+    // Execute the purchase check query
+    const { rows } = await database.query(purchasheCheckQuery, 
+        [req.user.id, productId,]
+    );
+
+    // If no purchase record found, deny the review
+    if (rows.length === 0) {
+        return res.status(403).json({
+            success: false,
+            message: "You can only review a product you've purchased.",
+        });
+    }
+
+    // Check if the product exists
+    const product = await database.query("SELECT * FROM products WHERE id = $1", [productId,]);
+
+    // If product not found, return error
+    if (product.rows.length === 0) {
+        return next(new ErrorHandler("Product not found.", 404));
+    }
+
+    // Check if the user has already reviewed the product
+    const isAlreadyReviewed = await database.query(` SELECT * FROM reviews WHERE product_id = $1 AND user_id = $2`,
+        [productId, req.user.id]
+    );
+
+    let review;
+
+    // If already reviewed, update the existing review; otherwise, create a new review
+    if (isAlreadyReviewed.rows.length > 0) {
+        review = await database.query("UPDATE reviews SET rating = $1, comment = $2 WHERE product_id = $3 AND user_id = $4 RETURNING *",
+            [rating, comment, productId, req.user.id]
+        );
+    }
+    else { review = await database.query(
+            "INSERT INTO reviews (product_id, user_id, rating, comment) VALUES ($1, $2, $3, $4) RETURNING *",
+            [productId, req.user.id, rating, comment]
+        );
+    }
+
+    // Recalculate and update the average rating for the product
+    const allReviews = await database.query(`SELECT AVG(rating) AS avg_rating FROM reviews WHERE product_id = $1`, [productId]);
+
+    // Get the new average rating
+    const newAvgRating = allReviews.rows[0].avg_rating;
+
+    // Update the product's average rating in the database
+    const updatedProduct = await database.query(`UPDATE products SET ratings = $1 WHERE id = $2 RETURNING *`,
+        [newAvgRating, productId]
+    );
+
+    // Send response
+    res.status(200).json({
+        success: true,
+        message: "Review posted.",
+        review: review.rows[0],
+        product: updatedProduct.rows[0],
+    });
+});
+
+
+// For deleting a product review----->
+export const deleteReview = catchAsyncErrors(async (req, res, next) => {
+    const { productId } = req.params;
+
+    // Delete the review from the database
+    const review = await database.query(
+        "DELETE FROM reviews WHERE product_id = $1 AND user_id = $2 RETURNING *",
+        [productId, req.user.id]
+    );
+
+    // Check if the review existed
+    if (review.rows.length === 0) {
+        return next(new ErrorHandler("Review not found.", 404));
+    }
+
+    // Recalculate the average rating after deletion
+    const allReviews = await database.query(`SELECT AVG(rating) AS avg_rating FROM reviews WHERE product_id = $1`,
+        [productId]
+    );
+
+    const newAvgRating = allReviews.rows[0].avg_rating;
+
+    // Update the product's average rating in the database
+    const updatedProduct = await database.query(`UPDATE products SET ratings = $1 WHERE id = $2 RETURNING *`,
+        [newAvgRating, productId]
+    );
+
+    // Send response
+    res.status(200).json({
+        success: true,
+        message: "Your review has been deleted.",
+        review: review.rows[0],
+        product: updatedProduct.rows[0],
+    });
+});
+
+
+// Helper function to get AI recommendations----->
+export const fetchAIFilteredProducts = catchAsyncErrors(
+    async (req, res, next) => {
+        const { userPrompt } = req.body;
+
+        // Validate user prompt
+        if (!userPrompt) {
+            return next(new ErrorHandler("Provide a valid prompt.", 400));
+        }
+
+        // Function to get AI recommendations
+        const filterKeywords = (query) => {
+            const stopWords = new Set([
+                "the",
+                "they",
+                "them",
+                "then",
+                "I",
+                "we",
+                "you",
+                "he",
+                "she",
+                "it",
+                "is",
+                "a",
+                "an",
+                "of",
+                "and",
+                "or",
+                "to",
+                "for",
+                "from",
+                "on",
+                "who",
+                "whom",
+                "why",
+                "when",
+                "which",
+                "with",
+                "this",
+                "that",
+                "in",
+                "at",
+                "by",
+                "be",
+                "not",
+                "was",
+                "were",
+                "has",
+                "have",
+                "had",
+                "do",
+                "does",
+                "did",
+                "so",
+                "some",
+                "any",
+                "how",
+                "can",
+                "could",
+                "should",
+                "would",
+                "there",
+                "here",
+                "just",
+                "than",
+                "because",
+                "but",
+                "its",
+                "it's",
+                "if",
+                ".",
+                ",",
+                "!",
+                "?",
+                ">",
+                "<",
+                ";",
+                "`",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+            ]);
+
+            // Process the query to extract meaningful keywords
+            return query
+                .toLowerCase()
+                .replace(/[^\w\s]/g, "")
+                .split(/\s+/)
+                .filter((word) => !stopWords.has(word))
+                .map((word) => `%${word}%`);
+        };
+
+        // Function to get AI recommendations (mock implementation)
+        const keywords = filterKeywords(userPrompt);
+
+        // STEP 1: BASIC FILTERING
+        const result = await database.query(
+        `
+            SELECT * FROM products
+            WHERE name ILIKE ANY($1)
+            OR description ILIKE ANY($1)
+            OR category ILIKE ANY($1)
+            LIMIT 200;     
+        `,[keywords]);
+
+        const filteredProducts = result.rows;
+
+        // Handle case when no products match the basic filtering
+        if (filteredProducts.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: "No products found matching your prompt.",
+                products: [],
+            });
+        }
+
+        // STEP 2: AI-BASED RECOMMENDATION (Mocked for demonstration)
+        const { success, products } = await getAIRecommendation(
+            req,
+            res,
+            userPrompt,
+            filteredProducts
+        );
+
+        // Send response
+        res.status(200).json({
+            success: success,
+            message: "AI filtered products.",
+            products,
+        });
+    }
+);
