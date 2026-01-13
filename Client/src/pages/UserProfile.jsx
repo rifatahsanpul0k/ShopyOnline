@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -23,6 +23,7 @@ import {
   AlertCircle,
   Check,
   Upload,
+  User,
   Loader,
 } from "lucide-react";
 import Button from "../components/ui/Button";
@@ -34,7 +35,7 @@ const UserProfile = () => {
     (state) => state.auth
   );
 
-  const [activeTab, setActiveTab] = useState("profile"); // profile, orders, settings
+  const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -42,10 +43,10 @@ const UserProfile = () => {
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
-    name: authUser?.name || "",
-    email: authUser?.email || "",
-    phone: authUser?.phone || "",
-    address: authUser?.address || "",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
   });
 
   // Password form state
@@ -57,10 +58,22 @@ const UserProfile = () => {
 
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(
-    authUser?.avatar?.url || null
-  );
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+
+  // Initialize form with user data
+  useEffect(() => {
+    if (authUser) {
+      setProfileForm({
+        name: authUser.name || "",
+        email: authUser.email || "",
+        phone: authUser.phone || "",
+        address: authUser.address || "",
+      });
+      // Set avatar preview from server
+      setAvatarPreview(authUser.avatar?.url || null);
+    }
+  }, [authUser]);
 
   // Redirect if not authenticated
   if (!authUser) {
@@ -81,31 +94,53 @@ const UserProfile = () => {
   // Handle profile form change
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
-    setProfileForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error for this field
+    setProfileForm((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   // Handle password form change
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
-    setPasswordForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setPasswordForm((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  // Handle avatar upload
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setErrors({ avatar: "Please upload an image file" });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors({ avatar: "Image size must be less than 5MB" });
+      return;
+    }
+
+    setErrors({});
+
+    // Create local preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Store file to be uploaded
+    setAvatarFile(file);
+
+    // Auto-enable edit mode if not already
+    if (!isEditing) {
+      setIsEditing(true);
     }
   };
 
@@ -124,9 +159,27 @@ const UserProfile = () => {
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length === 0) {
-      const result = await dispatch(updateProfile(profileForm));
+      const formData = new FormData();
+      formData.append("name", profileForm.name);
+      formData.append("email", profileForm.email);
+      formData.append("phone", profileForm.phone || "");
+      formData.append("address", profileForm.address || "");
+
+      // Add avatar file if selected
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
+      }
+
+      const result = await dispatch(updateProfile(formData));
       if (result.type === "auth/profile/update/fulfilled") {
         setIsEditing(false);
+        setAvatarFile(null);
+
+        // Update preview with the new avatar URL from server
+        if (result.payload?.avatar?.url) {
+          setAvatarPreview(result.payload.avatar.url);
+        }
+
         setSuccessMessage("Profile updated successfully!");
         setTimeout(() => setSuccessMessage(""), 3000);
       }
@@ -153,8 +206,8 @@ const UserProfile = () => {
       const result = await dispatch(
         updatePassword({
           currentPassword: passwordForm.currentPassword,
-          password: passwordForm.newPassword,
-          confirmPassword: passwordForm.confirmPassword,
+          newPassword: passwordForm.newPassword,
+          confirmNewPassword: passwordForm.confirmPassword,
         })
       );
       if (result.type === "auth/password/update/fulfilled") {
@@ -177,59 +230,26 @@ const UserProfile = () => {
     }
   };
 
-  // Handle avatar upload
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      setErrors({ avatar: "Please upload an image file" });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors({ avatar: "Image size must be less than 5MB" });
-      return;
-    }
-
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setProfileForm({
+      name: authUser?.name || "",
+      email: authUser?.email || "",
+      phone: authUser?.phone || "",
+      address: authUser?.address || "",
+    });
+    setAvatarPreview(authUser?.avatar?.url || null);
+    setAvatarFile(null);
     setErrors({});
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload to backend
-    const formData = new FormData();
-    formData.append("avatar", file);
-
-    setIsUploadingAvatar(true);
-    try {
-      // TODO: Replace with your actual backend endpoint
-      // Example: const res = await axiosInstance.post("/api/v1/upload/avatar", formData);
-      // For now, we'll just show success with the preview
-      setSuccessMessage("Avatar uploaded successfully!");
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (error) {
-      setErrors({
-        avatar: error.response?.data?.message || "Failed to upload avatar",
-      });
-      setAvatarPreview(authUser?.avatar?.url || null);
-    } finally {
-      setIsUploadingAvatar(false);
-    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-[1440px] mx-auto">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-5xl font-heading font-bold text-black mb-2">
+        <div className="mb-8">
+          <h1 className="text-4xl lg:text-5xl font-bold text-black mb-2">
             My Profile
           </h1>
           <p className="text-gray-600">Manage your account and settings</p>
@@ -248,56 +268,47 @@ const UserProfile = () => {
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl border border-gray-200 p-6 sticky top-20">
-              {/* User Avatar & Name */}
-              <div className="text-center mb-8 pb-8 border-b border-gray-200">
-                <div className="relative inline-block mb-4">
-                  {avatarPreview || authUser?.avatar?.url ? (
+              {/* Avatar */}
+              <div className="text-center mb-6 pb-6 border-b border-gray-200">
+                <div className="relative inline-block mb-3">
+                  {avatarPreview ? (
                     <img
-                      src={avatarPreview || authUser?.avatar?.url}
-                      alt={authUser?.name || "User"}
-                      className="w-32 h-32 rounded-full object-cover border-4 border-black shadow-lg"
+                      src={avatarPreview}
+                      alt={authUser?.name}
+                      className="w-24 h-24 rounded-full object-cover border-4 border-black"
                     />
                   ) : (
-                    <div className="w-32 h-32 bg-gradient-to-br from-black to-gray-700 rounded-full flex items-center justify-center border-4 border-black shadow-lg">
-                      <span className="text-white font-bold text-4xl">
-                        {authUser?.name
-                          ?.split(" ")
-                          ?.map((n) => n?.[0])
-                          ?.join("")
-                          ?.toUpperCase() || "U"}
+                    <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center border-4 border-black">
+                      <span className="text-white font-bold text-3xl">
+                        {authUser?.name?.charAt(0)?.toUpperCase() || "U"}
                       </span>
                     </div>
                   )}
 
                   {/* Upload Button */}
-                  <label
-                    htmlFor="avatar-upload"
-                    className="absolute bottom-0 right-0 bg-black text-white rounded-full p-2 cursor-pointer hover:bg-gray-800 transition"
-                    title="Upload profile picture"
-                  >
-                    <Upload className="w-4 h-4" />
-                  </label>
+                  {isEditing && (
+                    <label
+                      htmlFor="avatar-upload"
+                      className="absolute bottom-0 right-0 bg-black text-white rounded-full p-2 cursor-pointer hover:bg-gray-800 transition"
+                      title="Upload profile picture"
+                    >
+                      <Upload className="w-4 h-4" />
+                    </label>
+                  )}
                   <input
                     id="avatar-upload"
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarUpload}
-                    disabled={isUploadingAvatar}
                     className="hidden"
                   />
-
-                  {isUploadingAvatar && (
-                    <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                      <Loader className="w-6 h-6 text-white animate-spin" />
-                    </div>
-                  )}
                 </div>
 
                 {errors.avatar && (
                   <p className="text-red-500 text-sm mb-2">{errors.avatar}</p>
                 )}
 
-                <h3 className="font-bold text-black text-xl mb-2">
+                <h3 className="font-bold text-black text-lg mb-1">
                   {authUser?.name || "User"}
                 </h3>
                 <p className="text-gray-600 text-sm break-all">
@@ -305,25 +316,31 @@ const UserProfile = () => {
                 </p>
               </div>
 
-              {/* Navigation Tabs */}
+              {/* Navigation */}
               <div className="space-y-2">
                 <button
-                  onClick={() => setActiveTab("profile")}
+                  onClick={() => {
+                    setActiveTab("profile");
+                    setIsEditing(false);
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-pill transition ${
                     activeTab === "profile"
                       ? "bg-black text-white font-semibold"
                       : "text-black hover:bg-gray-100"
                   }`}
                 >
-                  <Mail className="w-5 h-5" />
-                  <span className="flex-1 text-left">Profile Info</span>
+                  <User className="w-5 h-5" />
+                  <span className="flex-1 text-left">Profile</span>
                   {activeTab === "profile" && (
                     <ChevronRight className="w-4 h-4" />
                   )}
                 </button>
 
                 <button
-                  onClick={() => setActiveTab("orders")}
+                  onClick={() => {
+                    setActiveTab("orders");
+                    setIsEditing(false);
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-pill transition ${
                     activeTab === "orders"
                       ? "bg-black text-white font-semibold"
@@ -331,14 +348,17 @@ const UserProfile = () => {
                   }`}
                 >
                   <ShoppingBag className="w-5 h-5" />
-                  <span className="flex-1 text-left">My Orders</span>
+                  <span className="flex-1 text-left">Orders</span>
                   {activeTab === "orders" && (
                     <ChevronRight className="w-4 h-4" />
                   )}
                 </button>
 
                 <button
-                  onClick={() => setActiveTab("settings")}
+                  onClick={() => {
+                    setActiveTab("settings");
+                    setIsEditing(false);
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-pill transition ${
                     activeTab === "settings"
                       ? "bg-black text-white font-semibold"
@@ -346,17 +366,17 @@ const UserProfile = () => {
                   }`}
                 >
                   <Settings className="w-5 h-5" />
-                  <span className="flex-1 text-left">Settings</span>
+                  <span className="flex-1 text-left">Security</span>
                   {activeTab === "settings" && (
                     <ChevronRight className="w-4 h-4" />
                   )}
                 </button>
               </div>
 
-              {/* Logout Button */}
+              {/* Logout */}
               <button
                 onClick={handleLogout}
-                className="w-full mt-8 flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 rounded-pill transition font-medium"
+                className="w-full mt-6 flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 rounded-pill transition font-medium"
               >
                 <LogOut className="w-5 h-5" />
                 Logout
@@ -458,26 +478,26 @@ const UserProfile = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-4 pt-6 border-t border-gray-300">
+                    <div className="flex gap-3 pt-4">
                       <button
                         onClick={handleUpdateProfile}
                         disabled={isUpdatingProfile}
-                        className="flex-1 flex items-center justify-center gap-2 bg-black text-white font-bold py-4 rounded-pill hover:opacity-90 transition disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-2 bg-black text-white font-bold py-3 rounded-pill hover:opacity-90 transition disabled:opacity-50"
                       >
-                        <Save className="w-5 h-5" />
-                        {isUpdatingProfile ? "Saving..." : "Save Changes"}
+                        {isUpdatingProfile ? (
+                          <>
+                            <Loader className="w-5 h-5 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-5 h-5" />
+                            Save Changes
+                          </>
+                        )}
                       </button>
                       <button
-                        onClick={() => {
-                          setIsEditing(false);
-                          setProfileForm({
-                            name: authUser?.name || "",
-                            email: authUser?.email || "",
-                            phone: authUser?.phone || "",
-                            address: authUser?.address || "",
-                          });
-                          setErrors({});
-                        }}
+                        onClick={handleCancelEdit}
                         className="flex-1 flex items-center justify-center gap-2 border border-gray-300 text-black font-medium py-3 rounded-pill hover:bg-gray-100 transition"
                       >
                         <X className="w-5 h-5" />
@@ -487,10 +507,10 @@ const UserProfile = () => {
                   </div>
                 ) : (
                   // View Mode
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     {/* Name */}
-                    <div className="flex items-start gap-4 pb-6 border-b border-gray-200">
-                      <Phone className="w-6 h-6 text-gray-400 flex-shrink-0 mt-1" />
+                    <div className="flex items-start gap-4 pb-5 border-b border-gray-200">
+                      <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
                       <div className="flex-1">
                         <p className="text-sm text-gray-600 font-medium">
                           Full Name

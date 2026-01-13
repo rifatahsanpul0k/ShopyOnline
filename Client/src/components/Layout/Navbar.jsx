@@ -15,19 +15,6 @@ const Navbar = () => {
 
   return (
     <div className="w-full relative z-50">
-      {/* Top Banner */}
-      <div className="bg-black text-white py-2 px-4 text-center text-sm relative">
-        <p className="text-xs sm:text-sm">
-          Sign up and get 20% off to your first order.
-          <Link to="/auth/register" className="underline font-medium ml-2">
-            Sign Up Now
-          </Link>
-        </p>
-        <button className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:block">
-          <X size={16} />
-        </button>
-      </div>
-
       {/* Main Navbar */}
       <nav className="bg-white py-6 px-6 lg:px-12 border-b border-gray-200">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-8">
@@ -44,22 +31,6 @@ const Navbar = () => {
               className="text-2xl lg:text-3xl font-heading font-bold tracking-tighter"
             >
               SHOPYONLINE
-            </Link>
-          </div>
-
-          {/* Desktop Links */}
-          <div className="hidden lg:flex items-center gap-6 text-base">
-            <Link to="/products?sort=new" className="hover:text-gray-600">
-              New Arrivals
-            </Link>
-            <Link to="/products?sort=sale" className="hover:text-gray-600">
-              On Sale
-            </Link>
-            <Link to="/products" className="hover:text-gray-600">
-              Shop
-            </Link>
-            <Link to="/brands" className="hover:text-gray-600">
-              Brands
             </Link>
           </div>
 

@@ -1,249 +1,461 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Button from "../components/ui/Button";
+import { formatPrice } from "../utils/currencyFormatter";
 import {
   Star,
   ChevronRight,
+  ChevronLeft,
   Zap,
   Truck,
   RotateCcw,
-  Award,
+  ShieldCheck,
   ShoppingBag,
-  Heart,
-  Settings,
 } from "lucide-react";
 
-// Dummy Data for Preview
-const NEW_ARRIVALS = [
+// Hero Slider Data
+const HERO_SLIDES = [
   {
     id: 1,
-    name: "T-shirt with Tape Details",
-    price: 120,
-    rating: 4.5,
-    image:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
+    title: "TRUSTED BRANDS.",
+    subtitle: "Precision engineered components. Uncompromising power.",
+    image: "/img1.jpg",
+    cta: "SHOP NOW",
+    link: "/products",
   },
   {
     id: 2,
-    name: "Skinny Fit Jeans",
-    price: 240,
-    originalPrice: 260,
-    discount: "-20%",
-    rating: 3.5,
-    image:
-      "https://images.unsplash.com/photo-1542272604-787c62d465d1?w=400&h=400&fit=crop",
+    title: "GAMING LAPTOPS.",
+    subtitle: "Experience ultimate performance with cutting-edge technology.",
+    image: "/img2.png",
+    cta: "EXPLORE",
+    link: "/products?category=Laptops",
   },
   {
     id: 3,
-    name: "Checkered Shirt",
-    price: 180,
-    rating: 4.5,
-    image:
-      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=400&fit=crop",
-  },
-  {
-    id: 4,
-    name: "Sleeve Striped T-shirt",
-    price: 130,
-    originalPrice: 160,
-    discount: "-30%",
-    rating: 4.5,
-    image:
-      "https://images.unsplash.com/photo-1618354691551-418cb976055b?w=400&h=400&fit=crop",
+    title: "PC COMPONENTS.",
+    subtitle: "Build your dream setup with premium parts.",
+    image: "/img2.png",
+    cta: "BROWSE",
+    link: "/products?category=Components",
   },
 ];
 
-const TOP_SELLERS = [
+const FEATURED_TECH = [
+  {
+    id: 1,
+    name: "HP Victus 15-fa1137tx Gaming Laptop",
+    price: 950,
+    rating: 5,
+    specs: ["Core i5 13th Gen", "RTX 3050 6GB", "16GB DDR4 RAM"],
+    image: "/img2.png",
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+  },
+  {
+    id: 2,
+    name: 'ASUS TUF Gaming VG249Q1A 24" Monitor',
+    price: 240,
+    rating: 4.8,
+    specs: ["165Hz Refresh Rate", "IPS Panel", "1ms MPRT"],
+    image: "/img2.png",
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+  },
+  {
+    id: 3,
+    name: "Logitech G502 Hero Wired Gaming Mouse",
+    price: 55,
+    rating: 4.9,
+    specs: ["25K DPI Sensor", "11 Buttons", "RGB Lighting"],
+    image: "/img2.png",
+    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
+  },
+  {
+    id: 4,
+    name: "Intel 13th Gen Core i7-13700K Processor",
+    price: 420,
+    rating: 4.7,
+    specs: ["16 Cores", "24 Threads", "5.40 GHz Boost"],
+    image: "/img2.png",
+    createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), // 20 days ago
+  },
   {
     id: 5,
-    name: "Vertical Striped Shirt",
-    price: 212,
-    originalPrice: 232,
-    discount: "-20%",
-    rating: 5,
-    image:
-      "https://images.unsplash.com/photo-1570102519953-144402bfc4ea?w=400&h=400&fit=crop",
+    name: "Corsair Vengeance RGB 32GB DDR5",
+    price: 180,
+    rating: 4.6,
+    specs: ["5600MHz", "RGB Lighting", "Low Latency"],
+    image: "/img2.png",
+    createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000), // 25 days ago
   },
   {
     id: 6,
-    name: "Courage Graphic T-shirt",
-    price: 145,
-    rating: 4,
-    image:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
+    name: "Samsung 980 PRO 1TB NVMe SSD",
+    price: 150,
+    rating: 4.8,
+    specs: ["7000MB/s Read", "PCIe 4.0", "Heatsink"],
+    image: "/img2.png",
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
   },
   {
     id: 7,
-    name: "Loose Fit Bermuda Shorts",
-    price: 80,
-    rating: 3,
-    image:
-      "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&h=400&fit=crop",
+    name: "NVIDIA GeForce RTX 4070 Ti",
+    price: 850,
+    rating: 5,
+    specs: ["12GB GDDR6X", "DLSS 3", "Ray Tracing"],
+    image: "/img2.png",
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
   },
   {
     id: 8,
-    name: "Faded Skinny Jeans",
-    price: 210,
+    name: "Cooler Master MasterLiquid 360",
+    price: 120,
     rating: 4.5,
-    image:
-      "https://images.unsplash.com/photo-1542272604-787c62d465d1?w=400&h=400&fit=crop",
+    specs: ["360mm Radiator", "RGB Fans", "Silent Operation"],
+    image: "/img2.png",
+    createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
   },
 ];
 
 const CATEGORIES = [
-  {
-    name: "Casual",
-    image:
-      "https://images.unsplash.com/photo-1493217465235-252dd9c0d8d7?w=500&h=300&fit=crop",
-  },
-  {
-    name: "Formal",
-    image:
-      "https://images.unsplash.com/photo-1591047990999-20fef7a0fd16?w=500&h=300&fit=crop",
-  },
-  {
-    name: "Party",
-    image:
-      "https://images.unsplash.com/photo-1595777707802-52b71ef06af6?w=500&h=300&fit=crop",
-  },
-  {
-    name: "Gym",
-    image:
-      "https://images.unsplash.com/photo-1517836357463-d25ddfcbf042?w=500&h=300&fit=crop",
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    role: "Fashion Enthusiast",
-    text: "The quality of clothes is amazing! I've been a customer for 2 years and never disappointed. Highly recommend!",
-    rating: 5,
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
-  },
-  {
-    id: 2,
-    name: "Marcus Chen",
-    role: "Professional",
-    text: "Great selection of formal wear. The fit is perfect and the customer service is excellent!",
-    rating: 5,
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-  },
-  {
-    id: 3,
-    name: "Emma Davis",
-    role: "Student",
-    text: "Love the casual collection! Affordable prices and fast shipping. Will definitely shop again.",
-    rating: 4,
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop",
-  },
+  { name: "Laptops", image: "/img2.png", slug: "laptops" },
+  { name: "Components", image: "/img2.png", slug: "components" },
+  { name: "Gaming", image: "/img2.png", slug: "gaming" },
+  { name: "Accessories", image: "/img2.png", slug: "accessories" },
 ];
 
 const Home = () => {
   const { authUser } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
 
+  // Hero Slider State
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Product Slider States
+  const [newArrivalsIndex, setNewArrivalsIndex] = useState(0);
+  const [topRatedIndex, setTopRatedIndex] = useState(0);
+
+  // Auth Modal State
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [intendedDestination, setIntendedDestination] = useState("");
+
+  // Auto-advance slider
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide(
+      (prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length
+    );
+  };
+
+  const goToSlide = (index) => {
+    setCurrentSlide(index);
+  };
+
+  // Filter products for New Arrivals (last 30 days, max 8)
+  const newArrivals = FEATURED_TECH.filter((product) => {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    return product.createdAt >= thirtyDaysAgo;
+  }).slice(0, 8);
+
+  // Filter products for Top Rated (4.5+ rating)
+  const topRatedProducts = FEATURED_TECH.filter(
+    (product) => product.rating >= 4.5
+  ).slice(0, 8);
+
+  const handleCategoryClick = (categorySlug) => {
+    if (!authUser) {
+      setIntendedDestination(`/products?category=${categorySlug}`);
+      setShowAuthModal(true);
+      return;
+    }
+    navigate(`/products?category=${categorySlug}`);
+  };
+
+  // Protected navigation handler
+  const handleProtectedNavigation = (e) => {
+    if (!authUser) {
+      e.preventDefault();
+      const targetPath = e.currentTarget.getAttribute("href");
+      setIntendedDestination(targetPath);
+      setShowAuthModal(true);
+      return;
+    }
+    // If authenticated, navigation will proceed normally
+  };
+
+  // Product slider navigation
+  const nextNewArrivals = () => {
+    if (newArrivalsIndex < newArrivals.length - 4) {
+      setNewArrivalsIndex(newArrivalsIndex + 1);
+    }
+  };
+
+  const prevNewArrivals = () => {
+    if (newArrivalsIndex > 0) {
+      setNewArrivalsIndex(newArrivalsIndex - 1);
+    }
+  };
+
+  const nextTopRated = () => {
+    if (topRatedIndex < topRatedProducts.length - 4) {
+      setTopRatedIndex(topRatedIndex + 1);
+    }
+  };
+
+  const prevTopRated = () => {
+    if (topRatedIndex > 0) {
+      setTopRatedIndex(topRatedIndex - 1);
+    }
+  };
   return (
-    <main className="w-full overflow-x-hidden bg-white">
-      {/* 1. HERO SECTION */}
-      <section className="bg-gradient-to-r from-brand-light to-brand-gray pt-12 lg:pt-24 relative overflow-hidden">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pb-20">
-          {/* Hero Text */}
-          <div className="space-y-8 z-10">
-            <h1 className="text-5xl lg:text-[64px] leading-[1.1] font-heading font-bold text-black">
-              FIND CLOTHES THAT MATCHES YOUR STYLE
-            </h1>
-            <p className="text-black/70 text-base lg:text-lg max-w-md leading-relaxed">
-              Browse through our diverse range of meticulously crafted garments,
-              designed to bring out your individuality.
+    <main className="w-full overflow-x-hidden bg-white text-black">
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-3xl p-8 lg:p-12 max-w-md w-full relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition"
+              aria-label="Close modal"
+            >
+              <span className="text-2xl font-bold text-black">×</span>
+            </button>
+
+            <h2 className="text-3xl lg:text-4xl font-black tracking-tighter uppercase mb-4">
+              Login Required
+            </h2>
+            <p className="text-black/60 mb-8">
+              Please log in or create an account to access this feature and
+              explore our products.
             </p>
 
-            <Link to="/products">
-              <Button className="gap-2">
-                Shop Now <ChevronRight className="w-5 h-5" />
-              </Button>
-            </Link>
-
-            {/* Stats */}
-            <div className="flex items-center gap-6 pt-8 flex-wrap">
-              <div>
-                <h3 className="text-3xl font-bold text-black">200+</h3>
-                <p className="text-black/60 text-sm">International Brands</p>
-              </div>
-              <div className="w-[1px] h-12 bg-black/20"></div>
-              <div>
-                <h3 className="text-3xl font-bold text-black">2,000+</h3>
-                <p className="text-black/60 text-sm">High-Quality Products</p>
-              </div>
-              <div className="w-[1px] h-12 bg-black/20"></div>
-              <div>
-                <h3 className="text-3xl font-bold text-black">30k+</h3>
-                <p className="text-black/60 text-sm">Happy Customers</p>
-              </div>
+            <div className="flex flex-col gap-4">
+              <Link
+                to={`/auth/login?redirect=${encodeURIComponent(
+                  intendedDestination
+                )}`}
+                className="w-full bg-black text-white font-bold py-4 px-8 rounded-pill hover:bg-gray-800 transition text-center uppercase tracking-wider"
+              >
+                Login
+              </Link>
+              <Link
+                to={`/auth/register?redirect=${encodeURIComponent(
+                  intendedDestination
+                )}`}
+                className="w-full bg-white text-black font-bold py-4 px-8 rounded-pill border-2 border-black hover:bg-black hover:text-white transition text-center uppercase tracking-wider"
+              >
+                Sign Up
+              </Link>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Hero Image */}
-          <div className="relative min-h-[400px] lg:min-h-[600px] flex items-center justify-center">
-            <div className="relative w-full h-full flex items-center justify-center">
-              <Star className="absolute top-20 right-10 text-brand-yellow fill-brand-yellow w-16 h-16 animate-bounce" />
-              <Star
-                className="absolute bottom-32 left-5 text-brand-yellow fill-brand-yellow w-8 h-8 animate-bounce"
-                style={{ animationDelay: "0.2s" }}
-              />
-              <img
-                src="https://images.unsplash.com/photo-1490481651971-daf3a6407e07?w=500&h=600&fit=crop"
-                alt="Hero Fashion Model"
-                className="w-4/5 h-auto object-contain rounded-3xl"
-              />
+      {/* 1. HERO SECTION WITH SLIDER */}
+      <section className="bg-white border-b border-black relative overflow-hidden">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 pt-12 lg:pt-24 pb-24">
+          {/* Slider Container */}
+          <div className="relative">
+            {/* Slides */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[600px]">
+              {/* Content Side */}
+              <div className="space-y-8 z-10 relative">
+                {/* Slide Number Indicator */}
+                <div className="absolute -top-8 left-0 text-7xl font-black text-black/5">
+                  0{currentSlide + 1}
+                </div>
+
+                <h1 className="text-5xl lg:text-[80px] leading-[0.95] font-heading font-black text-black tracking-tighter uppercase">
+                  {HERO_SLIDES[currentSlide].title}
+                </h1>
+                <p className="text-black/60 text-base lg:text-xl max-w-md leading-relaxed">
+                  {HERO_SLIDES[currentSlide].subtitle}
+                </p>
+
+                <div className="flex flex-wrap gap-4 pt-4">
+                  <Link
+                    to={HERO_SLIDES[currentSlide].link}
+                    onClick={handleProtectedNavigation}
+                  >
+                    <Button className="gap-2 bg-black text-white border-2 border-black hover:bg-white hover:text-black transition-all px-10 py-6 text-base font-bold">
+                      {HERO_SLIDES[currentSlide].cta}
+                      <ChevronRight className="w-5 h-5" />
+                    </Button>
+                  </Link>
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center gap-12 pt-8 border-t-2 border-black/10">
+                  <div>
+                    <h3 className="text-5xl font-black text-black mb-1">10+</h3>
+                    <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
+                      Brands
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-5xl font-black text-black mb-1">
+                      100+
+                    </h3>
+                    <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
+                      Products
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-5xl font-black text-black mb-1">
+                      24/7
+                    </h3>
+                    <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
+                      Support
+                    </p>
+                  </div>
+                </div>
+
+                {/* Slider Controls - Desktop Position */}
+                <div className="hidden lg:flex items-center gap-4 pt-8">
+                  {/* Previous Button */}
+                  <button
+                    onClick={prevSlide}
+                    className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110"
+                    aria-label="Previous slide"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+
+                  {/* Dots */}
+                  <div className="flex gap-3">
+                    {HERO_SLIDES.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => goToSlide(index)}
+                        className={`h-2 rounded-full transition-all ${
+                          index === currentSlide
+                            ? "w-12 bg-black"
+                            : "w-2 bg-black/30 hover:bg-black/50 hover:w-4"
+                        }`}
+                        aria-label={`Go to slide ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    onClick={nextSlide}
+                    className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110"
+                    aria-label="Next slide"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Image Side - Clickable to navigate to products */}
+              <Link
+                to={HERO_SLIDES[currentSlide].link}
+                onClick={handleProtectedNavigation}
+                className="relative flex items-center justify-center cursor-pointer group order-first lg:order-last"
+              >
+                {/* Decorative Background Elements */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-transparent opacity-50 rounded-3xl transform rotate-3"></div>
+                <div className="absolute inset-0 bg-gradient-to-tl from-gray-100 to-transparent opacity-30 rounded-3xl transform -rotate-3"></div>
+
+                {/* Product Image */}
+                <img
+                  src={HERO_SLIDES[currentSlide].image}
+                  alt="Featured Tech"
+                  className="relative w-full h-auto object-contain grayscale group-hover:grayscale-0 transition-all duration-700 transform group-hover:scale-105 z-10"
+                />
+
+                {/* Badge */}
+                <div className="absolute top-4 right-4 bg-black text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider z-20">
+                  NEW
+                </div>
+              </Link>
+            </div>
+
+            {/* Slider Controls - Mobile Position */}
+            <div className="flex lg:hidden items-center justify-center gap-4 mt-8">
+              {/* Previous Button */}
+              <button
+                onClick={prevSlide}
+                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition"
+                aria-label="Previous slide"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              {/* Dots */}
+              <div className="flex gap-2">
+                {HERO_SLIDES.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToSlide(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      index === currentSlide
+                        ? "w-8 bg-black"
+                        : "w-2 bg-black/30 hover:bg-black/50"
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={nextSlide}
+                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition"
+                aria-label="Next slide"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
 
         {/* Brand Carousel */}
-        <div className="bg-black py-8 mt-4">
-          <div className="max-w-[1440px] mx-auto px-6 flex justify-between items-center flex-wrap gap-8">
-            {["VERSACE", "ZARA", "GUCCI", "PRADA", "CALVIN KLEIN"].map(
-              (brand) => (
+        <div className="bg-black py-12 border-t-2 border-white/10">
+          <div className="max-w-[1440px] mx-auto px-6">
+            <div className="flex justify-between items-center flex-wrap gap-8">
+              {["INTEL", "AMD", "ASUS", "MSI", "SAMSUNG"].map((brand) => (
                 <span
                   key={brand}
-                  className="text-white text-xl lg:text-2xl font-bold opacity-70 hover:opacity-100 transition"
+                  className="text-white text-2xl lg:text-3xl font-black tracking-tighter opacity-40 hover:opacity-100 transition-all duration-300 cursor-default hover:scale-110"
                 >
                   {brand}
                 </span>
-              )
-            )}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* AUTH CTA SECTION - Only show when NOT logged in */}
+      {/* 2. AUTH CTA */}
       {!authUser && (
-        <section className="py-16 px-6 lg:px-12 bg-black text-white">
-          <div className="max-w-[1440px] mx-auto text-center">
-            <h2 className="text-3xl lg:text-5xl font-heading font-bold mb-4">
-              Join Our Community
+        <section className="py-12 px-6 bg-black text-white border-y border-white/10">
+          <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <h2 className="text-2xl font-bold tracking-tight uppercase">
+              Join the ecosystem for exclusive deals
             </h2>
-            <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
-              Sign in to get personalized recommendations, track your orders,
-              save your favorites, and unlock exclusive deals!
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex gap-4">
               <Link to="/auth/login">
-                <Button
-                  variant="secondary"
-                  className="border-white text-black bg-white hover:bg-gray-100"
-                >
-                  Login Now
+                <Button className="bg-white !text-black hover:bg-gray-200 border-none font-bold px-8">
+                  LOGIN
                 </Button>
               </Link>
               <Link to="/auth/register">
-                <Button className="bg-white text-black hover:bg-gray-100">
-                  Create Account
+                <Button className="bg-transparent border-2 border-white !text-white hover:bg-white hover:!text-black transition-colors font-bold px-8">
+                  SIGN UP
                 </Button>
               </Link>
             </div>
@@ -251,477 +463,277 @@ const Home = () => {
         </section>
       )}
 
-      {/* WELCOME SECTION - Only show when logged in */}
-      {authUser && (
-        <section className="py-16 px-6 lg:px-12 bg-gradient-to-r from-black to-gray-900 text-white">
-          <div className="max-w-[1440px] mx-auto">
-            <div className="flex items-center gap-6">
-              {authUser?.avatar?.url ? (
-                <img
-                  src={authUser.avatar.url}
-                  alt={authUser.name}
-                  className="w-20 h-20 rounded-full object-cover border-4 border-white"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center">
-                  <span className="text-2xl font-bold text-black">
-                    {authUser.name?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
-              <div>
-                <h2 className="text-4xl lg:text-5xl font-heading font-bold mb-2">
-                  Welcome Back, {authUser.name}! 👋
-                </h2>
-                <p className="text-lg text-white/80">
-                  Ready to find your perfect style? Let's explore our latest
-                  collections.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* PERSONALIZED SECTION - Only show when logged in */}
-      {authUser && (
-        <section className="py-20 px-6 lg:px-12 max-w-[1440px] mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-            {/* Your Orders */}
-            <div className="bg-white rounded-3xl p-8 border-2 border-black shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
-                  <ShoppingBag className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-heading font-bold text-black">
-                  Your Orders
-                </h3>
-              </div>
-              <p className="text-gray-700 mb-6">
-                Track your purchases and manage your orders
-              </p>
-              <Link to="/orders">
-                <Button className="w-full gap-2">
-                  View Orders <ChevronRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
-
-            {/* Favorites */}
-            <div className="bg-white rounded-3xl p-8 border-2 border-black shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
-                  <Heart className="w-6 h-6 text-white fill-white" />
-                </div>
-                <h3 className="text-2xl font-heading font-bold text-black">
-                  Favorites
-                </h3>
-              </div>
-              <p className="text-gray-700 mb-6">
-                Save and manage your favorite items
-              </p>
-              <Link to="/products">
-                <Button className="w-full gap-2">
-                  Browse Favorites <ChevronRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
-
-            {/* Account Settings */}
-            <div className="bg-white rounded-3xl p-8 border-2 border-black shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
-                  <Settings className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-heading font-bold text-black">
-                  Account
-                </h3>
-              </div>
-              <p className="text-gray-700 mb-6">
-                Update your profile and preferences
-              </p>
-              <Link to="/profile">
-                <Button className="w-full gap-2">
-                  Manage Profile <ChevronRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
-
-            {/* Exclusive Deals */}
-            <div className="bg-white rounded-3xl p-8 border-2 border-black shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-heading font-bold text-black">
-                  Exclusive Deals
-                </h3>
-              </div>
-              <p className="text-gray-700 mb-6">
-                Member-only discounts and early access
-              </p>
-              <Link to="/products">
-                <Button className="w-full gap-2">
-                  View Deals <ChevronRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          {/* Recommended for You Section */}
-          <div className="mb-12">
-            <h3 className="text-4xl font-heading font-bold text-black mb-2">
-              Recommended For You
-            </h3>
-            <div className="w-20 h-1 bg-brand-yellow rounded-full mb-8"></div>
-            <p className="text-gray-600 text-lg mb-8">
-              Based on your preferences, here are our top picks just for you
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {NEW_ARRIVALS.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white rounded-card p-4 shadow-sm hover:shadow-lg transition transform hover:-translate-y-1"
+      {/* 3. CATEGORIES - Clickable to filter products */}
+      <section className="py-24 bg-black text-white">
+        <div className="max-w-[1440px] mx-auto px-6">
+          <h2 className="text-5xl font-black tracking-tighter uppercase mb-16">
+            Shop by Category
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {CATEGORIES.map((cat, i) => (
+              <button
+                key={i}
+                onClick={() => handleCategoryClick(cat.slug)}
+                className="relative h-[300px] overflow-hidden group cursor-pointer border border-white/20 hover:border-white transition-all"
               >
-                <div className="bg-gray-100 h-64 rounded-card overflow-hidden mb-4 relative group cursor-pointer">
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  className="w-full h-full object-cover grayscale opacity-50 group-hover:scale-105 group-hover:opacity-100 transition duration-700"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-transparent transition">
+                  <h3 className="text-3xl font-black uppercase tracking-tighter">
+                    {cat.name}
+                  </h3>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. NEW ARRIVALS - Products from last 30 days (max 8) */}
+      <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto">
+        <div className="flex items-end justify-between mb-16">
+          <h2 className="text-5xl font-black tracking-tighter uppercase">
+            New Arrivals
+          </h2>
+          <div className="flex items-center gap-4">
+            {/* Navigation Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={prevNewArrivals}
+                disabled={newArrivalsIndex === 0}
+                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                aria-label="Previous products"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={nextNewArrivals}
+                disabled={newArrivalsIndex >= newArrivals.length - 4}
+                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                aria-label="Next products"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+            <Link
+              to="/products?sort=newest"
+              onClick={handleProtectedNavigation}
+              className="font-bold border-b-2 border-black pb-1 hover:opacity-50 transition"
+            >
+              VIEW ALL
+            </Link>
+          </div>
+        </div>
+
+        {/* Slider Container */}
+        <div className="relative overflow-hidden">
+          <div
+            className="flex transition-transform duration-500 ease-out gap-10"
+            style={{
+              transform: `translateX(-${newArrivalsIndex * (100 / 4)}%)`,
+            }}
+          >
+            {newArrivals.map((product) => (
+              <Link
+                key={product.id}
+                to={`/product/${product.id}`}
+                onClick={handleProtectedNavigation}
+                className="group border-b-2 border-transparent hover:border-black transition-all pb-6 flex-shrink-0"
+                style={{ width: "calc(25% - 30px)" }}
+              >
+                <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                    className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-300 flex items-center justify-center">
-                    <button className="opacity-0 group-hover:opacity-100 transition duration-300 bg-white text-black font-bold py-2 px-4 rounded-pill">
-                      Add to Cart
-                    </button>
-                  </div>
                 </div>
-                <h3 className="font-semibold text-black line-clamp-2 mb-2">
+                <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight">
                   {product.name}
                 </h3>
-                <div className="flex gap-1 mb-2">
+                <div className="space-y-1 mb-4">
+                  {product.specs.map((spec, i) => (
+                    <p
+                      key={i}
+                      className="text-[11px] text-black/50 font-medium uppercase tracking-wider"
+                    >
+                      — {spec}
+                    </p>
+                  ))}
+                </div>
+                {/* Rating Stars */}
+                <div className="flex items-center gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-3 h-3 ${
-                        i < (product.rating || 4)
-                          ? "fill-brand-yellow text-brand-yellow"
+                      className={`w-4 h-4 ${
+                        i < Math.floor(product.rating)
+                          ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-300"
                       }`}
                     />
                   ))}
+                  <span className="text-sm text-black/60 ml-1">
+                    ({product.rating})
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-black">
-                      ${product.price}
-                    </span>
-                    {product.originalPrice && (
-                      <span className="text-sm line-through text-gray-400">
-                        ${product.originalPrice}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    className="text-black hover:opacity-70 transition-opacity"
-                    title="Add to Favorites"
-                  >
-                    <Star className="w-5 h-5 fill-current" />
+                  <span className="text-2xl font-black">
+                    {formatPrice(product.price)}
+                  </span>
+                  <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
+                    <ShoppingBag className="w-5 h-5" />
                   </button>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
-        </section>
-      )}
-
-      {/* 2. NEW ARRIVALS */}
-      <section className="py-20 px-6 lg:px-12 max-w-[1440px] mx-auto">
-        <div className="flex justify-between items-center mb-12">
-          <div>
-            <h2 className="text-4xl lg:text-5xl font-heading font-bold text-black mb-2">
-              NEW ARRIVALS
-            </h2>
-            <div className="w-20 h-1 bg-brand-yellow rounded-full"></div>
-          </div>
-          <Link to="/products" className="hidden md:block">
-            <Button variant="secondary" className="gap-2">
-              View All <ChevronRight className="w-5 h-5" />
-            </Button>
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {NEW_ARRIVALS.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-card p-4 shadow-sm hover:shadow-lg transition"
-            >
-              <div className="bg-gray-100 h-64 rounded-card overflow-hidden mb-4">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="font-semibold text-black line-clamp-2 mb-2">
-                {product.name}
-              </h3>
-              <div className="flex gap-1 mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-3 h-3 ${
-                      i < (product.rating || 4)
-                        ? "fill-brand-yellow text-brand-yellow"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-black">${product.price}</span>
-                {product.originalPrice && (
-                  <span className="text-sm line-through text-gray-400">
-                    ${product.originalPrice}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="text-center md:hidden">
-          <Link to="/products">
-            <Button variant="secondary">View All Products</Button>
-          </Link>
         </div>
       </section>
 
-      {/* 3. TOP SELLERS */}
-      <section className="py-20 px-6 lg:px-12 max-w-[1440px] mx-auto bg-brand-light rounded-3xl">
-        <div className="flex justify-between items-center mb-12">
-          <div>
-            <h2 className="text-4xl lg:text-5xl font-heading font-bold text-black mb-2">
-              TOP SELLING
-            </h2>
-            <div className="w-20 h-1 bg-brand-red rounded-full"></div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {TOP_SELLERS.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-card p-4 shadow-sm hover:shadow-lg transition"
-            >
-              <div className="bg-gray-100 h-64 rounded-card overflow-hidden mb-4">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="font-semibold text-black line-clamp-2 mb-2">
-                {product.name}
-              </h3>
-              <div className="flex gap-1 mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-3 h-3 ${
-                      i < (product.rating || 4)
-                        ? "fill-brand-yellow text-brand-yellow"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-black">${product.price}</span>
-                {product.originalPrice && (
-                  <span className="text-sm line-through text-gray-400">
-                    ${product.originalPrice}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 4. CATEGORY GRID */}
-      <section className="py-20 px-6 lg:px-12 max-w-[1440px] mx-auto">
-        <div className="mb-12">
-          <h2 className="text-4xl lg:text-5xl font-heading font-bold text-black mb-2">
-            BROWSE BY STYLE
+      {/* 5. TOP RATED PRODUCTS - Rating 4.5 or higher */}
+      <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto bg-gray-50">
+        <div className="flex items-end justify-between mb-16">
+          <h2 className="text-5xl font-black tracking-tighter uppercase">
+            Top Rated Products
           </h2>
-          <div className="w-20 h-1 bg-brand-yellow rounded-full"></div>
+          <div className="flex items-center gap-4">
+            {/* Navigation Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={prevTopRated}
+                disabled={topRatedIndex === 0}
+                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                aria-label="Previous products"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={nextTopRated}
+                disabled={topRatedIndex >= topRatedProducts.length - 4}
+                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                aria-label="Next products"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+            <Link
+              to="/products?sort=rating"
+              onClick={handleProtectedNavigation}
+              className="font-bold border-b-2 border-black pb-1 hover:opacity-50 transition"
+            >
+              VIEW ALL
+            </Link>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Casual - Large */}
-          <div className="md:col-span-2 relative h-72 rounded-3xl overflow-hidden group cursor-pointer">
-            <img
-              src={CATEGORIES[0].image}
-              alt={CATEGORIES[0].name}
-              className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-            />
-            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition flex items-center justify-start p-8">
-              <h3 className="text-4xl font-bold text-white">
-                {CATEGORIES[0].name}
-              </h3>
-            </div>
-          </div>
-
-          {/* Formal - Stacked */}
-          <div className="flex flex-col gap-6">
-            <div className="relative h-32 rounded-3xl overflow-hidden group cursor-pointer">
-              <img
-                src={CATEGORIES[1].image}
-                alt={CATEGORIES[1].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-              />
-              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition flex items-center justify-start p-6">
-                <h3 className="text-2xl font-bold text-white">
-                  {CATEGORIES[1].name}
+        {/* Slider Container */}
+        <div className="relative overflow-hidden">
+          <div
+            className="flex transition-transform duration-500 ease-out gap-10"
+            style={{
+              transform: `translateX(-${topRatedIndex * (100 / 4)}%)`,
+            }}
+          >
+            {topRatedProducts.map((product) => (
+              <Link
+                key={product.id}
+                to={`/product/${product.id}`}
+                onClick={handleProtectedNavigation}
+                className="group border-b-2 border-transparent hover:border-black transition-all pb-6 bg-white p-6 rounded-lg flex-shrink-0"
+                style={{ width: "calc(25% - 30px)" }}
+              >
+                <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                  />
+                </div>
+                <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight">
+                  {product.name}
                 </h3>
-              </div>
-            </div>
-
-            <div className="relative h-32 rounded-3xl overflow-hidden group cursor-pointer">
-              <img
-                src={CATEGORIES[3].image}
-                alt={CATEGORIES[3].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-              />
-              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition flex items-center justify-start p-6">
-                <h3 className="text-2xl font-bold text-white">
-                  {CATEGORIES[3].name}
-                </h3>
-              </div>
-            </div>
-          </div>
-
-          {/* Party - Bottom */}
-          <div className="md:col-span-2 relative h-72 rounded-3xl overflow-hidden group cursor-pointer">
-            <img
-              src={CATEGORIES[2].image}
-              alt={CATEGORIES[2].name}
-              className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-            />
-            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition flex items-center justify-start p-8">
-              <h3 className="text-4xl font-bold text-white">
-                {CATEGORIES[2].name}
-              </h3>
-            </div>
+                <div className="space-y-1 mb-4">
+                  {product.specs.map((spec, i) => (
+                    <p
+                      key={i}
+                      className="text-[11px] text-black/50 font-medium uppercase tracking-wider"
+                    >
+                      — {spec}
+                    </p>
+                  ))}
+                </div>
+                {/* Rating Stars - Prominent for top rated */}
+                <div className="flex items-center gap-1 mb-4 bg-yellow-50 p-2 rounded">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${
+                        i < Math.floor(product.rating)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                  <span className="text-sm font-bold text-black ml-1">
+                    {product.rating} / 5
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-black">
+                    {formatPrice(product.price)}
+                  </span>
+                  <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
+                    <ShoppingBag className="w-5 h-5" />
+                  </button>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 5. FEATURES */}
-      <section className="py-20 px-6 lg:px-12 max-w-[1440px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* 6. TRUST FEATURES (Clean Grid) */}
+      <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {[
             {
               icon: Truck,
-              title: "Free Delivery",
-              desc: "Enjoy free shipping on all orders above $50",
+              title: "EXPRESS DELIVERY",
+              desc: "Safe handling for sensitive parts",
             },
             {
               icon: RotateCcw,
-              title: "Easy Returns",
-              desc: "Return within 30 days for a full refund",
+              title: "10-DAY RETURNS",
+              desc: "No questions asked policy",
             },
             {
-              icon: Award,
-              title: "Quality Assured",
-              desc: "100% authentic and high-quality products",
+              icon: ShieldCheck,
+              title: "AUTHENTICITY",
+              desc: "Official brand authorized",
             },
             {
               icon: Zap,
-              title: "Fast Checkout",
-              desc: "Quick and secure payment process",
+              title: "EMI PLANS",
+              desc: "Zero interest installments",
             },
           ].map((feature, idx) => {
             const Icon = feature.icon;
             return (
-              <div
-                key={idx}
-                className="flex flex-col items-center text-center space-y-4"
-              >
-                <div className="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center">
-                  <Icon className="w-8 h-8 text-black" />
-                </div>
-                <h3 className="text-lg font-bold text-black">
+              <div key={idx} className="space-y-4 border-l-4 border-black pl-6">
+                <Icon className="w-8 h-8" />
+                <h3 className="font-black text-sm tracking-widest uppercase">
                   {feature.title}
                 </h3>
-                <p className="text-black/60 text-sm">{feature.desc}</p>
+                <p className="text-xs text-black/50 font-bold uppercase">
+                  {feature.desc}
+                </p>
               </div>
             );
           })}
-        </div>
-      </section>
-
-      {/* 6. TESTIMONIALS */}
-      <section className="py-20 px-6 lg:px-12 max-w-[1440px] mx-auto bg-brand-light rounded-3xl">
-        <div className="mb-12">
-          <h2 className="text-4xl lg:text-5xl font-heading font-bold text-black mb-2">
-            WHAT OUR CUSTOMERS SAY
-          </h2>
-          <div className="w-20 h-1 bg-brand-red rounded-full"></div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {TESTIMONIALS.map((testimonial) => (
-            <div
-              key={testimonial.id}
-              className="bg-white rounded-3xl p-8 shadow-lg"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <img
-                  src={testimonial.avatar}
-                  alt={testimonial.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div>
-                  <h4 className="font-bold text-black">{testimonial.name}</h4>
-                  <p className="text-sm text-black/60">{testimonial.role}</p>
-                </div>
-              </div>
-              <div className="flex gap-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-5 h-5 text-brand-yellow fill-brand-yellow"
-                  />
-                ))}
-              </div>
-              <p className="text-black/70 leading-relaxed">
-                "{testimonial.text}"
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 7. NEWSLETTER */}
-      <section className="py-20 px-6 lg:px-12 max-w-[1440px] mx-auto">
-        <div className="bg-black rounded-3xl p-12 lg:p-20 text-center space-y-6">
-          <h2 className="text-4xl lg:text-5xl font-heading font-bold text-white">
-            STAY UP TO DATE ABOUT OUR LATEST OFFERS
-          </h2>
-          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email address"
-              className="flex-1 px-6 py-4 rounded-pill bg-white text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
-            />
-            <button className="px-8 py-4 bg-white text-black font-semibold rounded-pill hover:bg-gray-100 transition">
-              Subscribe
-            </button>
-          </div>
         </div>
       </section>
     </main>

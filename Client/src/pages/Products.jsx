@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Star } from "lucide-react";
+import { formatPrice } from "../utils/currencyFormatter";
 
 const Products = () => {
   const [searchParams] = useSearchParams();
@@ -94,7 +95,8 @@ const Products = () => {
                   className="w-full"
                 />
                 <div className="text-sm text-gray-600">
-                  ${filters.minPrice} - ${filters.maxPrice}
+                  {formatPrice(filters.minPrice)} -{" "}
+                  {formatPrice(filters.maxPrice)}
                 </div>
               </div>
             </div>
@@ -166,11 +168,11 @@ const Products = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-black">
-                        ${product.price}
+                        {formatPrice(product.price)}
                       </span>
                       {product.originalPrice && (
                         <span className="text-sm line-through text-gray-400">
-                          ${product.originalPrice}
+                          {formatPrice(product.originalPrice)}
                         </span>
                       )}
                     </div>
