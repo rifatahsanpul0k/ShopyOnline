@@ -237,36 +237,40 @@ export const updateProduct = catchAsyncErrors(async (req, res, next) => {
     });
 });
 
-// export const deleteProduct = catchAsyncErrors(async (req, res, next) => {
-//     const { productId } = req.params;
 
-//     const product = await database.query("SELECT * FROM products WHERE id = $1", [
-//         productId,
-//     ]);
-//     if (product.rows.length === 0) {
-//         return next(new ErrorHandler("Product not found.", 404));
-//     }
+// For deleting a product----->
+export const deleteProduct = catchAsyncErrors(async (req, res, next) => {
+    const { productId } = req.params;
 
-//     const images = product.rows[0].images;
+    const product = await database.query("SELECT * FROM products WHERE id = $1", [productId,]);
 
-//     const deleteResult = await database.query(
-//         "DELETE FROM products WHERE id = $1 RETURNING *",
-//         [productId]
-//     );
+    // Check if product exists
+    if (product.rows.length === 0) {
+        return next(new ErrorHandler("Product not found.", 404));
+    }
 
-//     if (deleteResult.rows.length === 0) {
-//         return next(new ErrorHandler("Failed to delete product.", 500));
-//     }
+    // Get images associated with the product
+    const images = product.rows[0].images;
 
-//     // Delete images from Cloudinary
-//     if (images && images.length > 0) {
-//         for (const image of images) {
-//             await cloudinary.uploader.destroy(image.public_id);
-//         }
-//     }
+    // Delete product from the database
+    const deleteResult = await database.query(
+        "DELETE FROM products WHERE id = $1 RETURNING *",[productId]);
 
-//     res.status(200).json({
-//         success: true,
-//         message: "Product deleted successfully.",
-//     });
-// });
+    // Check if deletion was successful
+    if (deleteResult.rows.length === 0) {
+        return next(new ErrorHandler("Failed to delete product.", 500));
+    }
+
+    // Delete images from Cloudinary
+    if (images && images.length > 0) {
+        for (const image of images) {
+            await cloudinary.uploader.destroy(image.public_id);
+        }
+    }
+
+    // Send response
+    res.status(200).json({
+        success: true,
+        message: "Product deleted successfully.",
+    });
+});
