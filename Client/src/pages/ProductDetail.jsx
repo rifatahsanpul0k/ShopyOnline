@@ -156,7 +156,7 @@ const ProductDetail = () => {
             <div className="grid grid-cols-2 gap-4 pt-6 border-t">
               <div className="text-center p-4 bg-gray-50 rounded">
                 <p className="text-sm text-gray-600">Free Shipping</p>
-                <p className="font-semibold">On orders over ৳2,500</p>
+                <p className="font-semibold">On orders over $25</p>
               </div>
               <div className="text-center p-4 bg-gray-50 rounded">
                 <p className="text-sm text-gray-600">Easy Returns</p>
