@@ -1,11 +1,14 @@
 /**
- * Format price to BDT currency (Bangladeshi Taka)
+ * Format price to USD currency (US Dollars)
  * @param {number} amount - The amount to format
  * @returns {string} Formatted price string
  */
 export const formatPrice = (amount) => {
-  if (!amount) return "৳0";
-  return `৳${new Intl.NumberFormat("en-BD").format(amount)}`;
+  if (!amount) return "$0.00";
+  return `$${new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount)}`;
 };
 
 /**

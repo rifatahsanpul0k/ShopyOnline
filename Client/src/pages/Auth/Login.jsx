@@ -39,8 +39,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md mx-auto space-y-6">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-5xl font-heading font-bold text-black mb-2">

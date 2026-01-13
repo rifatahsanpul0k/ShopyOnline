@@ -12,6 +12,7 @@ import {
   Eye,
   X,
   Loader,
+  ArrowLeft,
 } from "lucide-react";
 import Button from "../components/ui/Button";
 import { getUserOrdersAPI } from "../services/ordersService.js";
@@ -309,6 +310,15 @@ const Orders = () => {
       {/* Header */}
       <section className="py-16 px-6 lg:px-12 bg-gradient-to-r from-black to-gray-900 text-white">
         <div className="max-w-[1440px] mx-auto">
+          {/* Back Button */}
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-white/80 hover:text-white transition mb-6 font-medium"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back
+          </button>
+
           <h1 className="text-5xl lg:text-6xl font-heading font-bold mb-2">
             My Orders
           </h1>
