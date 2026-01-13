@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { formatPrice } from "../utils/currencyFormatter";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -9,7 +10,8 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const { products } = useSelector((state) => state.products);
 
-  const product = products?.find((p) => p.id === parseInt(id));
+  // Try to find product from Redux
+  let product = products?.find((p) => p.id === id || p.id === parseInt(id));
 
   if (!product) {
     return (
@@ -80,11 +82,11 @@ const ProductDetail = () => {
             <div className="space-y-2">
               <div className="flex items-center space-x-4">
                 <span className="text-4xl font-bold text-red-500">
-                  ${product.price}
+                  {formatPrice(product.price)}
                 </span>
                 {product.originalPrice && (
                   <span className="text-xl text-gray-400 line-through">
-                    ${product.originalPrice}
+                    {formatPrice(product.originalPrice)}
                   </span>
                 )}
               </div>
@@ -154,7 +156,7 @@ const ProductDetail = () => {
             <div className="grid grid-cols-2 gap-4 pt-6 border-t">
               <div className="text-center p-4 bg-gray-50 rounded">
                 <p className="text-sm text-gray-600">Free Shipping</p>
-                <p className="font-semibold">On orders over $50</p>
+                <p className="font-semibold">On orders over ৳2,500</p>
               </div>
               <div className="text-center p-4 bg-gray-50 rounded">
                 <p className="text-sm text-gray-600">Easy Returns</p>

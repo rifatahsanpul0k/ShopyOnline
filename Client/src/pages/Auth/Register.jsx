@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { User, Mail, Lock } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { registerUser } from "../../store/slices/authSlice";
@@ -14,6 +14,7 @@ const Register = () => {
   });
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isSigningUp } = useSelector((state) => state.auth);
 
   const handleSubmit = async (e) => {
@@ -31,7 +32,13 @@ const Register = () => {
     );
 
     if (result.payload?.user) {
-      navigate("/auth/login");
+      // Check if there's a redirect parameter
+      const redirectTo = searchParams.get("redirect");
+      if (redirectTo) {
+        navigate(redirectTo);
+      } else {
+        navigate("/");
+      }
     }
   };
 
@@ -46,7 +53,11 @@ const Register = () => {
           <p className="text-gray-600">
             Already have an account?{" "}
             <Link
-              to="/auth/login"
+              to={`/auth/login${
+                searchParams.get("redirect")
+                  ? `?redirect=${searchParams.get("redirect")}`
+                  : ""
+              }`}
               className="text-black font-medium hover:opacity-70 transition-opacity"
             >
               Sign In

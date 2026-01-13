@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { clearCart } from "../store/slices/cartSlice";
 import { Check, Package, Mail, Home } from "lucide-react";
 import Button from "../components/ui/Button";
+import { formatPrice } from "../utils/currencyFormatter";
 
 const PaymentSuccess = () => {
   const location = useLocation();
@@ -64,7 +65,7 @@ const PaymentSuccess = () => {
               Total Amount Paid
             </p>
             <p className="text-4xl font-bold text-green-600">
-              ${successData?.amount?.toFixed(2) || "0.00"}
+              {formatPrice(successData?.amount || 0)}
             </p>
           </div>
         </div>

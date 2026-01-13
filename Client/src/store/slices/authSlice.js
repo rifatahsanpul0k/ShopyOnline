@@ -7,13 +7,13 @@ export const registerUser = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const res = await axiosInstance.post("/auth/register", data);
-      toast.success(res.data.message || "Account created! Please login.");
-      // Don't close modal - let user login with new credentials
+      toast.success(res.data.message || "Account created successfully!");
       return res.data;
     } catch (error) {
-      const message = error.response?.data?.message || "Registration failed";
-      toast.error(message);
-      return thunkAPI.rejectWithValue(message);
+      // Error is handled by axios interceptor
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Registration failed"
+      );
     }
   }
 );
@@ -24,12 +24,12 @@ export const loginUser = createAsyncThunk(
     try {
       const res = await axiosInstance.post("/auth/login", data);
       toast.success(res.data.message || "Login successful!");
-      // Modal closing is handled by LoginModal.jsx only
       return res.data;
     } catch (error) {
-      const message = error.response?.data?.message || "Login failed";
-      toast.error(message);
-      return thunkAPI.rejectWithValue(message);
+      // Error is handled by axios interceptor
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Login failed"
+      );
     }
   }
 );
@@ -55,7 +55,7 @@ export const logoutUser = createAsyncThunk(
       toast.success(res.data.message || "Logged out successfully");
       return null;
     } catch (error) {
-      toast.error(error.response?.data?.message || "Logout failed");
+      // Error is handled by axios interceptor
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || "Logout failed"
       );
@@ -71,13 +71,13 @@ export const forgotPassword = createAsyncThunk(
         "/auth/password/forgot?frontendUrl=http://localhost:5173",
         { email }
       );
-      toast.success(res.data.message);
+      toast.success(res.data.message || "Reset link sent to your email");
       return res.data;
     } catch (error) {
-      const message =
-        error.response?.data?.message || "Failed to send reset email";
-      toast.error(message);
-      return thunkAPI.rejectWithValue(message);
+      // Error is handled by axios interceptor
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Failed to send reset email"
+      );
     }
   }
 );
@@ -89,12 +89,13 @@ export const resetPassword = createAsyncThunk(
         password,
         confirmPassword,
       });
-      toast.success(res.data.message);
+      toast.success(res.data.message || "Password reset successful!");
       return res.data.user;
     } catch (error) {
-      const message = error.response?.data?.message || "Password reset failed";
-      toast.error(message);
-      return thunkAPI.rejectWithValue(message);
+      // Error is handled by axios interceptor
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Password reset failed"
+      );
     }
   }
 );
@@ -103,12 +104,13 @@ export const updateProfile = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const res = await axiosInstance.put("/auth/profile/update", data);
-      toast.success(res.data.message);
+      toast.success(res.data.message || "Profile updated successfully!");
       return res.data.user;
     } catch (error) {
-      const message = error.response?.data?.message || "Profile update failed";
-      toast.error(message);
-      return thunkAPI.rejectWithValue(message);
+      // Error is handled by axios interceptor
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Profile update failed"
+      );
     }
   }
 );
@@ -117,12 +119,13 @@ export const updatePassword = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const res = await axiosInstance.put("/auth/password/update", data);
-      toast.success(res.data.message);
+      toast.success(res.data.message || "Password updated successfully!");
       return null;
     } catch (error) {
-      const message = error.response?.data?.message || "Password update failed";
-      toast.error(message);
-      return thunkAPI.rejectWithValue(message);
+      // Error is handled by axios interceptor
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Password update failed"
+      );
     }
   }
 );
