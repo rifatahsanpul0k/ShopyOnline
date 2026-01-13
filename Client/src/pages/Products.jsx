@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -115,19 +115,6 @@ const Products = () => {
   const currentCategory =
     CATEGORY_FILTERS[categoryParam] || CATEGORY_FILTERS.laptops;
 
-  const [filters, setFilters] = useState({
-    search: searchParams.get("search") || "",
-    category: categoryParam,
-    subcategory: searchParams.get("subcategory") || "",
-    minPrice: 0,
-    maxPrice: 5000,
-    sort: searchParams.get("sort") || "price-low",
-    brands: [],
-    specs: {},
-    inStock: false,
-    minRating: 0,
-  });
-
   const { products } = useSelector((state) => state.product);
 
   // Dummy products for demonstration (replace with actual API data)
@@ -234,6 +221,79 @@ const Products = () => {
       max: Math.ceil(Math.max(...prices) / 10) * 10,
     };
   }, [allProducts]);
+
+  const [filters, setFilters] = useState({
+    search: searchParams.get("search") || "",
+    category: categoryParam,
+    subcategory: searchParams.get("subcategory") || "",
+    minPrice: priceRange.min,
+    maxPrice: priceRange.max,
+    sort: searchParams.get("sort") || "price-low",
+    brands: [],
+    specs: {},
+    inStock: false,
+    minRating: 0,
+  });
+
+  // ----------------------------------------------------------------------
+  // SAFARI/WEBKIT FIX: Inject CSS to handle pointer-events on range inputs
+  // ----------------------------------------------------------------------
+  useEffect(() => {
+    const styleId = "slider-styles";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.innerHTML = `
+        .range-slider-input {
+          -webkit-appearance: none;
+          appearance: none;
+          pointer-events: none; /* Allows clicking through the track */
+          background: transparent;
+        }
+
+        /* WebKit (Safari/Chrome) Thumb */
+        .range-slider-input::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          pointer-events: auto; /* Re-enables clicking on the thumb */
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: black;
+          border: 2px solid white;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          cursor: pointer;
+          margin-top: -8px; /* Centers thumb on track */
+          position: relative;
+          z-index: 20;
+        }
+
+        /* Firefox Thumb */
+        .range-slider-input::-moz-range-thumb {
+          pointer-events: auto;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: black;
+          border: 2px solid white;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          cursor: pointer;
+          border: none;
+          z-index: 20;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+  // ----------------------------------------------------------------------
+
+  // Update filters when price range calculation changes (e.g. data loaded)
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      minPrice: priceRange.min,
+      maxPrice: priceRange.max,
+    }));
+  }, [priceRange]);
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -384,13 +444,13 @@ const Products = () => {
                 {expandedSections.price && (
                   <div className="space-y-4">
                     {/* Slider Container */}
-                    <div className="h-8 relative w-full px-2">
+                    <div className="h-8 relative w-full px-2 flex items-center">
                       {/* Gray Background Line */}
-                      <div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 h-1.5 bg-gray-200 rounded-full" />
+                      <div className="absolute left-2 right-2 h-1.5 bg-gray-200 rounded-full" />
 
                       {/* Black Active Range Line */}
                       <div
-                        className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-black rounded-full z-10"
+                        className="absolute h-1.5 bg-black rounded-full z-10"
                         style={{
                           left: `calc(0.5rem + ${
                             ((filters.minPrice - priceRange.min) /
@@ -413,12 +473,13 @@ const Products = () => {
                         max={priceRange.max}
                         value={filters.minPrice}
                         onChange={(e) => {
-                          const value = Number(e.target.value);
-                          if (value < filters.maxPrice) {
-                            setFilters({ ...filters, minPrice: value });
-                          }
+                          const value = Math.min(
+                            Number(e.target.value),
+                            filters.maxPrice - 1
+                          );
+                          setFilters({ ...filters, minPrice: value });
                         }}
-                        className="absolute top-1/2 -translate-y-1/2 left-2 w-[calc(100%-1rem)] h-8 appearance-none bg-transparent pointer-events-none z-20 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-black [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:appearance-none [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-black [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-lg [&::-moz-range-thumb]:border-none"
+                        className="range-slider-input absolute w-full h-full left-0 top-0 z-20 m-0"
                       />
 
                       {/* Max Slider Input */}
@@ -428,12 +489,13 @@ const Products = () => {
                         max={priceRange.max}
                         value={filters.maxPrice}
                         onChange={(e) => {
-                          const value = Number(e.target.value);
-                          if (value > filters.minPrice) {
-                            setFilters({ ...filters, maxPrice: value });
-                          }
+                          const value = Math.max(
+                            Number(e.target.value),
+                            filters.minPrice + 1
+                          );
+                          setFilters({ ...filters, maxPrice: value });
                         }}
-                        className="absolute top-1/2 -translate-y-1/2 left-2 w-[calc(100%-1rem)] h-8 appearance-none bg-transparent pointer-events-none z-20 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-black [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:appearance-none [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-black [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-lg [&::-moz-range-thumb]:border-none"
+                        className="range-slider-input absolute w-full h-full left-0 top-0 z-20 m-0"
                       />
                     </div>
 
