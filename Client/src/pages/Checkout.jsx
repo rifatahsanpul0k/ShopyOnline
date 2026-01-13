@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ChevronLeft, Lock, Check, AlertCircle } from "lucide-react";
 import Button from "../components/ui/Button";
+import { formatPrice } from "../utils/currencyFormatter";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -635,7 +636,7 @@ const Checkout = () => {
                           </p>
                         </div>
                         <p className="font-bold text-black">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          {formatPrice(item.price * item.quantity)}
                         </p>
                       </div>
                     ))}
@@ -655,23 +656,23 @@ const Checkout = () => {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${orderSummary.subtotal.toFixed(2)}</span>
+                  <span>{formatPrice(orderSummary.subtotal)}</span>
                 </div>
 
                 <div className="flex justify-between text-gray-600">
                   <span>Tax</span>
-                  <span>${orderSummary.tax.toFixed(2)}</span>
+                  <span>{formatPrice(orderSummary.tax)}</span>
                 </div>
 
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>${orderSummary.shipping.toFixed(2)}</span>
+                  <span>{formatPrice(orderSummary.shipping)}</span>
                 </div>
 
                 <div className="border-t border-gray-300 pt-4">
                   <div className="flex justify-between text-xl font-bold text-black">
                     <span>Total</span>
-                    <span>${orderSummary.total.toFixed(2)}</span>
+                    <span>{formatPrice(orderSummary.total)}</span>
                   </div>
                 </div>
               </div>
