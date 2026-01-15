@@ -60,7 +60,26 @@ export const deleteUser = catchAsyncErrors(async (req, res, next) => {
 });
 
 
-// Dashboard Stats -------> Admin
+/*
+Dashboard Stats -------> Admin
+
+Purpose: 
+Returns comprehensive statistics for the admin dashboard including users, products, orders, and revenue metrics.
+
+How it works:
+Date Setup -> Calculates today, yesterday, and current month date ranges
+Parallel Data Fetching -> Uses Promise.all() to fetch multiple statistics simultaneously:
+
+- Total users & today's new users
+- Total products & today's new products
+- Total orders & today's new orders
+- Revenue (total, today's, yesterday's, monthly)
+- Order status counts (pending, processing, shipped, delivered, cancelled)
+- Top 5 selling products
+
+Revenue Comparison: 
+Calculates percentage change between today's and yesterday's revenue
+*/
 export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
     // Date Calculations
     const today = new Date();
