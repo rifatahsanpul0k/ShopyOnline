@@ -1,13 +1,12 @@
 import express from "express";
 import {
-  cancelOrder,
-  createOrder,
-  getAllOrders,
-  getOrderById,
-  getOrderStats,
-  getUserOrders,
+  fetchSingleOrder,
+  placeNewOrder,
+  fetchMyOrders,
+  fetchAllOrders,
   updateOrderStatus,
-} from "../controllers/ordersController.js";
+  deleteOrder,
+} from "../controllers/orderController.js";
 import {
   isAuthenticated,
   authorizedRoles,
@@ -15,25 +14,11 @@ import {
 
 const router = express.Router();
 
-// User routes
-router.post("/create", isAuthenticated, createOrder);
-router.get("/my-orders", isAuthenticated, getUserOrders);
-router.get("/:orderId", isAuthenticated, getOrderById);
-router.put("/:orderId/cancel", isAuthenticated, cancelOrder);
-
-// Admin routes
-router.get("/", isAuthenticated, authorizedRoles("Admin"), getAllOrders);
-router.put(
-  "/:orderId/status",
-  isAuthenticated,
-  authorizedRoles("Admin"),
-  updateOrderStatus
-);
-router.get(
-  "/stats/overview",
-  isAuthenticated,
-  authorizedRoles("Admin"),
-  getOrderStats
-);
+router.post("/new", isAuthenticated, placeNewOrder);
+router.get("/:orderId", isAuthenticated, fetchSingleOrder);
+router.get("/orders/me", isAuthenticated, fetchMyOrders);
+router.get("/admin/getall", isAuthenticated, authorizedRoles("Admin"), fetchAllOrders);
+router.put("/admin/update/:orderId", isAuthenticated, authorizedRoles("Admin"), updateOrderStatus);
+router.delete("/admin/delete/:orderId", isAuthenticated, authorizedRoles("Admin"), deleteOrder);
 
 export default router;
