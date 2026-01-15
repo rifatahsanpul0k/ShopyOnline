@@ -18,9 +18,7 @@ export const fetchAllProducts = createAsyncThunk(
       if (params.search) queryParams.append("search", params.search);
       if (params.page) queryParams.append("page", params.page);
 
-      const res = await axiosInstance.get(
-        `/products?${queryParams.toString()}`
-      );
+      const res = await axiosInstance.get(`/product?${queryParams.toString()}`);
       return res.data;
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to fetch products");
@@ -36,7 +34,9 @@ export const fetchSingleProduct = createAsyncThunk(
   "product/fetchSingleProduct",
   async (productId, thunkAPI) => {
     try {
-      const res = await axiosInstance.get(`/products/${productId}`);
+      const res = await axiosInstance.get(
+        `/product/singleProduct/${productId}`
+      );
       return res.data;
     } catch (error) {
       toast.error(
