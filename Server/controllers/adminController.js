@@ -61,171 +61,131 @@ export const deleteUser = catchAsyncErrors(async (req, res, next) => {
 
 
 // Dashboard Stats -------> Admin
-// export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
-//     const today = new Date();
-//     const todayDate = today.toISOString().split("T")[0];
-//     const yesterday = new Date(today);
-//     yesterday.setDate(today.getDate() - 1);
-//     const yesterdayDate = yesterday.toISOString().split("T")[0];
+export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
+    // Date Calculations
+    const today = new Date();
+    const todayDate = today.toISOString().split("T")[0];
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayDate = yesterday.toISOString().split("T")[0];
 
-//     const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-//     const currentMonthEnd = new Date(
-//         today.getFullYear(),
-//         today.getMonth() + 1,
-//         0
-//     );
+    // Current Month Start and End Dates
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-//     const previousMonthStart = new Date(
-//         today.getFullYear(),
-//         today.getMonth() - 1,
-//         1
-//     );
+    // Previous Month Start and End Dates
+    const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
 
-//     const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+    // Total Revenue All Time
+    const totalRevenueAllTimeQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE paid_at IS NOT NULL`);
+    const totalRevenueAllTime = parseFloat(totalRevenueAllTimeQuery.rows[0].sum) || 0;
 
-//     const totalRevenueAllTimeQuery = await database.query(`
-//     SELECT SUM(total_price) FROM orders WHERE paid_at IS NOT NULL    
-//     `);
-//     const totalRevenueAllTime =
-//         parseFloat(totalRevenueAllTimeQuery.rows[0].sum) || 0;
+    // Total Users Count
+    const totalUsersCountQuery = await database.query(`SELECT COUNT(*) FROM users WHERE role = 'User'`);
+    const totalUsersCount = parseInt(totalUsersCountQuery.rows[0].count) || 0;
 
-//     // Total Users
-//     const totalUsersCountQuery = await database.query(`
-//     SELECT COUNT(*) FROM users WHERE role = 'User'`);
+    // Order Status Counts
+    const orderStatusCountsQuery = await database.query(`SELECT order_status, COUNT(*) FROM orders WHERE paid_at IS NOT NULL GROUP BY order_status`);
 
-//     const totalUsersCount = parseInt(totalUsersCountQuery.rows[0].count) || 0;
+    const orderStatusCounts = {Processing: 0, Shipped: 0, Delivered: 0, Cancelled: 0,};
+    orderStatusCountsQuery.rows.forEach((row) => {
+        orderStatusCounts[row.order_status] = parseInt(row.count);
+    });
 
-//     // Order Status Counts
-//     const orderStatusCountsQuery = await database.query(`
-//       SELECT order_status, COUNT(*) FROM orders WHERE paid_at IS NOT NULL GROUP BY order_status
-//       `);
+    // Today's Revenue
+    const todayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1 AND paid_at IS NOT NULL`, [todayDate]);
+    const todayRevenue = parseFloat(todayRevenueQuery.rows[0].sum) || 0;
 
-//     const orderStatusCounts = {
-//         Processing: 0,
-//         Shipped: 0,
-//         Delivered: 0,
-//         Cancelled: 0,
-//     };
-//     orderStatusCountsQuery.rows.forEach((row) => {
-//         orderStatusCounts[row.order_status] = parseInt(row.count);
-//     });
+    // Yesterday's Revenue
+    const yesterdayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1 AND paid_at IS NOT NULL  `, [yesterdayDate]);
+    const yesterdayRevenue = parseFloat(yesterdayRevenueQuery.rows[0].sum) || 0;
 
-//     // Today's Revenue
-//     const todayRevenueQuery = await database.query(
-//         `
-//     SELECT SUM(total_price) FROM orders WHERE created_at::date = $1 AND paid_at IS NOT NULL
-//     `,
-//         [todayDate]
-//     );
-//     const todayRevenue = parseFloat(todayRevenueQuery.rows[0].sum) || 0;
+    // Monthly Sales Data
+    const monthlySalesQuery = await database.query(
+        `
+        SELECT
+        TO_CHAR(created_at, 'Mon YYYY') AS month,
+        DATE_TRUNC('month', created_at) as date,
+        SUM(total_price) as totalsales
+        FROM orders WHERE paid_at IS NOT NULL
+        GROUP BY month, date
+        ORDER BY date ASC
+        `
+    );
+    const monthlySales = monthlySalesQuery.rows.map((row) => ({
+        month: row.month, totalsales: parseFloat(row.totalsales) || 0,})
+    );
 
-//     // Yesterday's Revenue
-//     const yesterdayRevenueQuery = await database.query(
-//         `
-//     SELECT SUM(total_price) FROM orders WHERE created_at::date = $1 AND paid_at IS NOT NULL  
-//     `,
-//         [yesterdayDate]
-//     );
-//     const yesterdayRevenue = parseFloat(yesterdayRevenueQuery.rows[0].sum) || 0;
+    // Top 5 Best-Selling Products
+    const topSellingProductsQuery = await database.query(
+        `
+        SELECT p.name,
+        p.images->0->>'url' AS image,
+        p.category,
+        p.ratings,
+        SUM(oi.quantity) AS total_sold
+        FROM order_items oi
+        JOIN products p ON p.id = oi.product_id
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.paid_at IS NOT NULL
+        GROUP BY p.name, p.images, p.category, p.ratings
+        ORDER BY total_sold DESC
+        LIMIT 5
+        `
+    );
+    const topSellingProducts = topSellingProductsQuery.rows;
 
-//     //Monthly Sales For Line Chart
-//     const monthlySalesQuery = await database.query(`
-//     SELECT
-//     TO_CHAR(created_at, 'Mon YYYY') AS month,
-//     DATE_TRUNC('month', created_at) as date,
-//     SUM(total_price) as totalsales
-//     FROM orders WHERE paid_at IS NOT NULL
-//     GROUP BY month, date
-//     ORDER BY date ASC
-//     `);
+    // Current Month Sales
+    const currentMonthSalesQuery = await database.query(
+        `
+        SELECT SUM(total_price) AS total 
+        FROM orders 
+        WHERE paid_at IS NOT NULL AND created_at BETWEEN $1 AND $2  
+        `, [currentMonthStart, currentMonthEnd]
+    );
+    const currentMonthSales = parseFloat(currentMonthSalesQuery.rows[0].total) || 0;
 
-//     const monthlySales = monthlySalesQuery.rows.map((row) => ({
-//         month: row.month,
-//         totalsales: parseFloat(row.totalsales) || 0,
-//     }));
+    // Low Stock Products (stock <= 5)
+    const lowStockProductsQuery = await database.query(`SELECT name, stock FROM products WHERE stock <= 5 `);
+    const lowStockProducts = lowStockProductsQuery.rows;
 
-//     // Top 5 Most Sold Products
-//     const topSellingProductsQuery = await database.query(`
-//     SELECT p.name,
-//     p.images->0->>'url' AS image,
-//     p.category,
-//     p.ratings,
-//     SUM(oi.quantity) AS total_sold
-//     FROM order_items oi
-//     JOIN products p ON p.id = oi.product_id
-//     JOIN orders o ON o.id = oi.order_id
-//     WHERE o.paid_at IS NOT NULL
-//     GROUP BY p.name, p.images, p.category, p.ratings
-//     ORDER BY total_sold DESC
-//     LIMIT 5
-//   `);
+    // Revenue Growth Calculation in percentage with respect to last month
+    const lastMonthRevenueQuery = await database.query(
+        `
+        SELECT SUM(total_price) AS total 
+        FROM orders
+        WHERE paid_at IS NOT NULL AND created_at BETWEEN $1 AND $2
+        `, [previousMonthStart, previousMonthEnd]
+    );
+    const lastMonthRevenue = parseFloat(lastMonthRevenueQuery.rows[0].total) || 0;
 
-//     const topSellingProducts = topSellingProductsQuery.rows;
+    let revenueGrowth = "0%";
 
-//     // Total Sales of Current Month
-//     const currentMonthSalesQuery = await database.query(
-//         `
-//       SELECT SUM(total_price) AS total 
-//       FROM orders 
-//       WHERE paid_at IS NOT NULL AND created_at BETWEEN $1 AND $2  
-//       `,
-//         [currentMonthStart, currentMonthEnd]
-//     );
+    // Calculate growth rate only if last month's revenue is greater than 0
+    if (lastMonthRevenue > 0) {
+        const growthRate = ((currentMonthSales - lastMonthRevenue) / lastMonthRevenue) * 100;
+        revenueGrowth = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(2)}%`;
+    }
 
-//     const currentMonthSales =
-//         parseFloat(currentMonthSalesQuery.rows[0].total) || 0;
+    // New Users This Month
+    const newUsersThisMonthQuery = await database.query(`SELECT COUNT(*) FROM users WHERE created_at >= $1 AND role = 'User'`, [currentMonthStart]);
+    const newUsersThisMonth = parseInt(newUsersThisMonthQuery.rows[0].count) || 0;
 
-//     // Products with stock less than or equal to 5
-//     const lowStockProductsQuery = await database.query(`
-//         SELECT name, stock FROM products WHERE stock <= 5 
-//       `);
-
-//     const lowStockProducts = lowStockProductsQuery.rows;
-
-//     // Revenue Growth Rate (%)
-//     const lastMonthRevenueQuery = await database.query(
-//         `
-//       SELECT SUM(total_price) AS total 
-//       FROM orders
-//       WHERE paid_at IS NOT NULL AND created_at BETWEEN $1 AND $2
-//     `,
-//         [previousMonthStart, previousMonthEnd]
-//     );
-
-//     const lastMonthRevenue = parseFloat(lastMonthRevenueQuery.rows[0].total) || 0;
-
-//     let revenueGrowth = "0%";
-
-//     if (lastMonthRevenue > 0) {
-//         const growthRate =
-//             ((currentMonthSales - lastMonthRevenue) / lastMonthRevenue) * 100;
-//         revenueGrowth = `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(2)}%`;
-//     }
-
-//     // New Users This Month
-//     const newUsersThisMonthQuery = await database.query(
-//         `
-//     SELECT COUNT(*) FROM users WHERE created_at >= $1 AND role = 'User'
-//   `,
-//         [currentMonthStart]
-//     );
-
-//     const newUsersThisMonth = parseInt(newUsersThisMonthQuery.rows[0].count) || 0;
-
-//     // FINAL RESPONSE
-//     res.status(200).json({
-//         success: true,
-//         message: "Dashboard Stats Fetched Successfully",
-//         totalRevenueAllTime,
-//         todayRevenue,
-//         yesterdayRevenue,
-//         totalUsersCount,
-//         orderStatusCounts,
-//         monthlySales,
-//         currentMonthSales,
-//         topSellingProducts,
-//         lowStockProducts,
-//         revenueGrowth,
-//         newUsersThisMonth,
-//     });
-// });
+    // Send Response
+    res.status(200).json({
+        success: true,
+        message: "Dashboard Stats Fetched Successfully",
+        totalRevenueAllTime,
+        todayRevenue,
+        yesterdayRevenue,
+        totalUsersCount,
+        orderStatusCounts,
+        monthlySales,
+        currentMonthSales,
+        topSellingProducts,
+        lowStockProducts,
+        revenueGrowth,
+        newUsersThisMonth,
+    });
+});
