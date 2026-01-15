@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { ChevronLeft, Lock, Check, AlertCircle } from "lucide-react";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
+import { createOrderAPI } from "../services/ordersService";
+import { toast } from "react-toastify";
+import { clearCart } from "../store/slices/cartSlice";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
   const { authUser } = useSelector((state) => state.auth);
   const orderSummary = location.state?.orderSummary;
 
@@ -136,30 +140,57 @@ const Checkout = () => {
       if (!validateBilling()) return;
       setFormStep(3);
     } else if (formStep === 3) {
-      // Proceed to payment
+      // Proceed to payment - Create order in backend
       setIsLoading(true);
       try {
-        // TODO: Connect to backend endpoint: POST /api/v1/checkout/prepare
-        // This should:
-        // 1. Create order with shipping/billing info
-        // 2. Return Stripe client secret
-        // 3. Redirect to /payment with order ID
+        // Prepare order data for backend
+        const orderData = {
+          orderItems: orderSummary.items.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          shippingInfo: {
+            address: shippingInfo.address,
+            city: shippingInfo.city,
+            state: shippingInfo.state,
+            zip_code: shippingInfo.zipCode,
+            country: shippingInfo.country,
+            phone_number: shippingInfo.phone,
+          },
+          itemsPrice: orderSummary.subtotal,
+          taxPrice: orderSummary.tax,
+          shippingPrice: orderSummary.shipping,
+          totalPrice: orderSummary.total,
+          paymentInfo: {
+            status: "Pending", // Will be updated after payment
+          },
+        };
 
-        // For now, redirect to payment page with demo data
-        setTimeout(() => {
+        // Create order via API
+        const response = await createOrderAPI(orderData);
+        
+        if (response.success) {
+          toast.success("Order created successfully!");
+          
+          // Clear cart after successful order creation
+          dispatch(clearCart());
+          
+          // Redirect to payment page with real order ID
           navigate("/payment", {
             state: {
-              orderId: "demo_" + Date.now(),
+              orderId: response.order.id,
               shippingInfo,
               billingInfo,
               orderSummary,
             },
           });
-          setIsLoading(false);
-        }, 800);
+        }
       } catch (error) {
-        console.error("Error preparing order:", error);
-        setErrors({ submit: "Failed to prepare order. Please try again." });
+        console.error("Error creating order:", error);
+        toast.error(error.message || "Failed to create order. Please try again.");
+        setErrors({ submit: error.message || "Failed to create order. Please try again." });
+      } finally {
         setIsLoading(false);
       }
     }

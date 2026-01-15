@@ -67,20 +67,22 @@ const CATEGORY_FILTERS = {
       performance: ["Entry Level", "Mid Range", "High End", "Enthusiast"],
     },
   },
-  gaming: {
-    name: "Gaming",
+  smartphones: {
+    name: "Smartphones",
     subcategories: [
-      "Gaming Mice",
-      "Gaming Keyboards",
-      "Headsets",
-      "Controllers",
-      "Monitors",
-      "Chairs",
+      "Flagship Phones",
+      "Mid-Range Phones",
+      "Budget Phones",
+      "Gaming Phones",
+      "Foldable Phones",
+      "5G Phones",
     ],
     specs: {
-      brand: ["Logitech", "Razer", "Corsair", "SteelSeries", "HyperX"],
-      connectivity: ["Wired", "Wireless", "Bluetooth"],
-      rgb: ["RGB", "Non-RGB"],
+      brand: ["Apple", "Samsung", "Google", "OnePlus", "Xiaomi", "OPPO", "Vivo"],
+      storage: ["64GB", "128GB", "256GB", "512GB", "1TB"],
+      ram: ["4GB", "6GB", "8GB", "12GB", "16GB"],
+      camera: ["Single", "Dual", "Triple", "Quad", "50MP+"],
+      screen: ["6.1 inch", "6.5 inch", "6.7 inch", "6.8+ inch"],
     },
   },
   accessories: {
@@ -145,7 +147,7 @@ const Products = () => {
 
   // --- EFFECTS ---
 
-  // 1. Reset everything when switching Categories (e.g. Laptops -> Gaming)
+  // 1. Reset everything when switching Categories (e.g. Laptops -> Smartphones)
   useEffect(() => {
     setIsBoundsInitialized(false);
     // Reset bounds to defaults until data loads

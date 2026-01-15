@@ -28,7 +28,11 @@ const Login = () => {
 
       // Check if there's a redirect parameter
       const redirectTo = searchParams.get("redirect");
-      if (redirectTo) {
+      
+      // If user is Admin, redirect to admin dashboard
+      if (result.payload.user.role === "Admin") {
+        navigate("/admin/dashboard");
+      } else if (redirectTo) {
         navigate(redirectTo);
       } else {
         navigate("/");

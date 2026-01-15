@@ -26,7 +26,7 @@ const DUMMY_PRODUCT = {
   quantity: 1,
   image:
     "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
-  category: "electronics",
+  category: "Accessories",
 };
 
 const Cart = () => {

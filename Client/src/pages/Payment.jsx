@@ -34,21 +34,8 @@ const Payment = () => {
       return;
     }
 
-    // TODO: BACKEND API CONNECTION
-    // Call backend endpoint to create payment intent
-    // POST /api/v1/payments/create-intent
-    // Body: {
-    //   orderId: paymentData.orderId,
-    //   amount: paymentData.orderSummary.total, // Amount in USD
-    //   currency: 'usd',
-    //   metadata: {
-    //     userId: authUser.id,
-    //     items: paymentData.orderSummary.items
-    //   }
-    // }
-    // Response: { clientSecret: "pi_xxxxx" }
-
-    // DEMO: Simulate backend response
+    // Simulate payment intent creation (in production, this would call your backend)
+    // Backend would create Stripe payment intent and return clientSecret
     setClientSecret("pi_demo_" + Date.now());
   }, [paymentData, navigate]);
 
@@ -64,23 +51,19 @@ const Payment = () => {
     setError(null);
 
     try {
-      // TODO: BACKEND API CONNECTION
-      // This should call your backend endpoint:
-      // POST /api/v1/payments/confirm
-      // Body: {
-      //   paymentMethodId: paymentMethod.id,
-      //   clientSecret: clientSecret,
-      //   orderId: paymentData.orderId,
-      //   userId: authUser.id
-      // }
-
-      // DEMO: Simulate successful payment
-      // In production, use stripe.confirmCardPayment(clientSecret, {...})
+      // DEMO MODE: Simulated payment processing
+      // In production with Stripe:
+      // 1. Call stripe.confirmCardPayment(clientSecret, { payment_method: {...} })
+      // 2. Backend validates payment with Stripe
+      // 3. Update order payment status in database
+      // 4. Return success response
+      
+      // Simulate payment processing delay
       setTimeout(() => {
         setSuccess(true);
         setIsProcessing(false);
 
-        // After 2 seconds, redirect to success page
+        // Redirect to success page after brief delay
         setTimeout(() => {
           navigate("/payment/success", {
             state: {
@@ -91,7 +74,7 @@ const Payment = () => {
         }, 2000);
       }, 1500);
 
-      // Real Stripe implementation:
+      // Production Stripe implementation would look like:
       // const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
       //   payment_method: {
       //     card: elements.getElement(CardElement),
