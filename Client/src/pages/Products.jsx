@@ -117,6 +117,14 @@ const Products = () => {
   const currentCategory =
     CATEGORY_FILTERS[categoryParam] || CATEGORY_FILTERS.laptops;
 
+  // --- STATE MANAGEMENT ---
+
+  // 1. Slider Bounds: The absolute min/max of the category.
+  // We lock this once data loads so the slider doesn't shrink when filtering.
+  const [sliderBounds, setSliderBounds] = useState({ min: 0, max: 2000 });
+  const [isBoundsInitialized, setIsBoundsInitialized] = useState(false);
+
+  // 2. User Filters
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
     category: categoryParam,
@@ -134,26 +142,63 @@ const Products = () => {
     (state) => state.product
   );
 
-  // Get price range from available products
-  const priceRange = useMemo(() => {
-    if (!products || products.length === 0) return { min: 0, max: 5000 };
-    const prices = products.map((p) => p.price * 122); // Convert back to original price
-    return {
-      min: Math.floor(Math.min(...prices) / 10) * 10,
-      max: Math.ceil(Math.max(...prices) / 10) * 10,
-    };
-  }, [products]);
+  // --- EFFECTS ---
 
-  // Fetch products on mount and when filters change
+  // 1. Reset everything when switching Categories (e.g. Laptops -> Gaming)
+  useEffect(() => {
+    setIsBoundsInitialized(false);
+    // Reset bounds to defaults until data loads
+    setSliderBounds({ min: 0, max: 5000 });
+
+    setFilters((prev) => ({
+      ...prev,
+      category: categoryParam,
+      minPrice: 0,
+      maxPrice: 5000,
+      search: "",
+    }));
+  }, [categoryParam]);
+
+  // 2. Initialize Slider Bounds from Data
+  // This runs only ONCE per category load to "learn" the price range
+  useEffect(() => {
+    if (!loading && products && products.length > 0 && !isBoundsInitialized) {
+      const prices = products.map((p) => parseFloat(p.price));
+      const min = Math.floor(Math.min(...prices));
+      const max = Math.ceil(Math.max(...prices));
+
+      // Ensure max is at least slightly higher than min to prevent slider errors
+      const safeMax = max === min ? max + 100 : max;
+
+      setSliderBounds({ min, max: safeMax });
+
+      // Set the initial filter position to the full range
+      setFilters((prev) => ({
+        ...prev,
+        minPrice: min,
+        maxPrice: safeMax,
+      }));
+
+      setIsBoundsInitialized(true);
+    }
+  }, [products, loading, isBoundsInitialized]);
+
+  // 3. Fetch Data based on Filters
   useEffect(() => {
     const params = {
       category: filters.category,
       search: filters.search,
     };
 
-    // Add price range if changed from default
-    if (filters.minPrice !== 0 || filters.maxPrice !== 5000) {
-      params.price = `${filters.minPrice}-${filters.maxPrice}`;
+    // Only send price param if it differs from the Global Bounds
+    // This prevents sending a filter like "0-5000" on initial load, letting the backend return everything
+    if (isBoundsInitialized) {
+      if (
+        filters.minPrice > sliderBounds.min ||
+        filters.maxPrice < sliderBounds.max
+      ) {
+        params.price = `${filters.minPrice}-${filters.maxPrice}`;
+      }
     }
 
     // Add rating filter
@@ -175,11 +220,11 @@ const Products = () => {
     filters.maxPrice,
     filters.minRating,
     filters.inStock,
+    // Note: We purposefully omit sliderBounds from dependency array to prevent loops
+    isBoundsInitialized,
   ]);
 
-  // ----------------------------------------------------------------------
-  // SAFARI/WEBKIT FIX: Inject CSS to handle pointer-events on range inputs
-  // ----------------------------------------------------------------------
+  // 4. Safari/WebKit CSS Injection (Kept from your previous code)
   useEffect(() => {
     const styleId = "slider-styles";
     if (!document.getElementById(styleId)) {
@@ -189,14 +234,12 @@ const Products = () => {
         .range-slider-input {
           -webkit-appearance: none;
           appearance: none;
-          pointer-events: none; /* Allows clicking through the track */
+          pointer-events: none;
           background: transparent;
         }
-
-        /* WebKit (Safari/Chrome) Thumb */
         .range-slider-input::-webkit-slider-thumb {
           -webkit-appearance: none;
-          pointer-events: auto; /* Re-enables clicking on the thumb */
+          pointer-events: auto;
           width: 20px;
           height: 20px;
           border-radius: 50%;
@@ -204,12 +247,10 @@ const Products = () => {
           border: 2px solid white;
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
           cursor: pointer;
-          margin-top: -8px; /* Centers thumb on track */
+          margin-top: -8px;
           position: relative;
           z-index: 20;
         }
-
-        /* Firefox Thumb */
         .range-slider-input::-moz-range-thumb {
           pointer-events: auto;
           width: 20px;
@@ -226,63 +267,27 @@ const Products = () => {
       document.head.appendChild(style);
     }
   }, []);
-  // ----------------------------------------------------------------------
 
-  // Update filters when price range calculation changes (e.g. data loaded)
-  useEffect(() => {
-    if (
-      priceRange.min !== filters.minPrice ||
-      priceRange.max !== filters.maxPrice
-    ) {
-      setFilters((prev) => ({
-        ...prev,
-        minPrice: priceRange.min,
-        maxPrice: priceRange.max,
-      }));
-    }
-  }, [priceRange, filters.minPrice, filters.maxPrice]);
-
-  // Client-side filtering for subcategory, brand, and sorting
-  // (API handles category, price, rating, availability, search)
+  // --- SORTING ---
   const filteredProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
 
     let filtered = [...products];
 
-    // Subcategory filter (client-side)
-    if (filters.subcategory) {
-      filtered = filtered.filter((p) => p.subcategory === filters.subcategory);
-    }
-
-    // Brand filter (client-side)
-    if (filters.brands.length > 0) {
-      filtered = filtered.filter((p) => filters.brands.includes(p.brand));
-    }
-
-    // Sorting (client-side)
+    // Client-side sorting
     switch (filters.sort) {
       case "price-low":
-        filtered.sort((a, b) => a.price * 122 - b.price * 122);
+        filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
         break;
       case "price-high":
-        filtered.sort((a, b) => b.price * 122 - a.price * 122);
+        filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
         break;
       default:
-        filtered.sort((a, b) => a.price * 122 - b.price * 122);
+        filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
     }
 
     return filtered;
-  }, [products, filters.subcategory, filters.brands, filters.sort]);
-
-  // Toggle brand filter
-  const toggleBrand = (brand) => {
-    setFilters((prev) => ({
-      ...prev,
-      brands: prev.brands.includes(brand)
-        ? prev.brands.filter((b) => b !== brand)
-        : [...prev.brands, brand],
-    }));
-  };
+  }, [products, filters.sort]);
 
   // Toggle section expansion
   const toggleSection = (section) => {
@@ -298,8 +303,9 @@ const Products = () => {
       search: "",
       category: categoryParam,
       subcategory: "",
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
+      // Reset to the learnt bounds
+      minPrice: sliderBounds.min,
+      maxPrice: sliderBounds.max,
       sort: "price-low",
       brands: [],
       specs: {},
@@ -374,14 +380,14 @@ const Products = () => {
                         className="absolute h-1.5 bg-black rounded-full z-10"
                         style={{
                           left: `calc(0.5rem + ${
-                            ((filters.minPrice - priceRange.min) /
-                              (priceRange.max - priceRange.min)) *
+                            ((filters.minPrice - sliderBounds.min) /
+                              (sliderBounds.max - sliderBounds.min)) *
                             100
                           }% * (100% - 1rem) / 100%)`,
                           right: `calc(0.5rem + ${
                             100 -
-                            ((filters.maxPrice - priceRange.min) /
-                              (priceRange.max - priceRange.min)) *
+                            ((filters.maxPrice - sliderBounds.min) /
+                              (sliderBounds.max - sliderBounds.min)) *
                               100
                           }% * (100% - 1rem) / 100%)`,
                         }}
@@ -390,8 +396,8 @@ const Products = () => {
                       {/* Min Slider Input */}
                       <input
                         type="range"
-                        min={priceRange.min}
-                        max={priceRange.max}
+                        min={sliderBounds.min}
+                        max={sliderBounds.max}
                         value={filters.minPrice}
                         onChange={(e) => {
                           const value = Math.min(
@@ -406,8 +412,8 @@ const Products = () => {
                       {/* Max Slider Input */}
                       <input
                         type="range"
-                        min={priceRange.min}
-                        max={priceRange.max}
+                        min={sliderBounds.min}
+                        max={sliderBounds.max}
                         value={filters.maxPrice}
                         onChange={(e) => {
                           const value = Math.max(
@@ -445,41 +451,6 @@ const Products = () => {
                   </div>
                 )}
               </div>
-
-              {/* Brand Filters */}
-              {currentCategory.specs?.brand && (
-                <div className="mb-8">
-                  <button
-                    onClick={() => toggleSection("specs")}
-                    className="w-full flex items-center justify-between mb-4 font-bold text-sm uppercase tracking-wider"
-                  >
-                    Brand
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform ${
-                        expandedSections.specs ? "" : "-rotate-90"
-                      }`}
-                    />
-                  </button>
-                  {expandedSections.specs && (
-                    <div className="space-y-2">
-                      {currentCategory.specs.brand.map((brand) => (
-                        <label
-                          key={brand}
-                          className="flex items-center gap-3 px-2 py-2 hover:bg-white/50 rounded-lg cursor-pointer transition"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={filters.brands.includes(brand)}
-                            onChange={() => toggleBrand(brand)}
-                            className="w-5 h-5 rounded border-2 border-black/20 accent-black cursor-pointer"
-                          />
-                          <span className="text-sm font-medium">{brand}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Rating Filter */}
               <div className="mb-8">
@@ -641,8 +612,8 @@ const Products = () => {
                       ? product.images[0].url
                       : "https://via.placeholder.com/400";
 
-                  // Convert price for display (multiply by 122)
-                  const displayPrice = product.price * 122;
+                  // Use price as-is from database (in USD)
+                  const displayPrice = product.price;
 
                   return (
                     <Link
@@ -730,7 +701,7 @@ const Products = () => {
                               />
                             ))}
                             <span className="text-sm text-black/60 ml-1">
-                              ({product.ratings?.toFixed(1) || "0.0"})
+                              ({parseFloat(product.ratings || 0).toFixed(1)})
                             </span>
                           </div>
                         </div>
