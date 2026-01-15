@@ -440,144 +440,142 @@ export const deleteReview = catchAsyncErrors(async (req, res, next) => {
 });
 
 // Helper function to get AI recommendations----->
-export const fetchAIFilteredProducts = catchAsyncErrors(
-  async (req, res, next) => {
-    const { userPrompt } = req.body;
+// export const fetchAIFilteredProducts = catchAsyncErrors(
+//     async (req, res, next) => {
+//         const { userPrompt } = req.body;
 
-    // Validate user prompt
-    if (!userPrompt) {
-      return next(new ErrorHandler("Provide a valid prompt.", 400));
-    }
+//         // Validate user prompt
+//         if (!userPrompt) {
+//             return next(new ErrorHandler("Provide a valid prompt.", 400));
+//         }
 
-    // Function to get AI recommendations
-    const filterKeywords = (query) => {
-      const stopWords = new Set([
-        "the",
-        "they",
-        "them",
-        "then",
-        "I",
-        "we",
-        "you",
-        "he",
-        "she",
-        "it",
-        "is",
-        "a",
-        "an",
-        "of",
-        "and",
-        "or",
-        "to",
-        "for",
-        "from",
-        "on",
-        "who",
-        "whom",
-        "why",
-        "when",
-        "which",
-        "with",
-        "this",
-        "that",
-        "in",
-        "at",
-        "by",
-        "be",
-        "not",
-        "was",
-        "were",
-        "has",
-        "have",
-        "had",
-        "do",
-        "does",
-        "did",
-        "so",
-        "some",
-        "any",
-        "how",
-        "can",
-        "could",
-        "should",
-        "would",
-        "there",
-        "here",
-        "just",
-        "than",
-        "because",
-        "but",
-        "its",
-        "it's",
-        "if",
-        ".",
-        ",",
-        "!",
-        "?",
-        ">",
-        "<",
-        ";",
-        "`",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-      ]);
+//         // Function to get AI recommendations
+//         const filterKeywords = (query) => {
+//             const stopWords = new Set([
+//                 "the",
+//                 "they",
+//                 "them",
+//                 "then",
+//                 "I",
+//                 "we",
+//                 "you",
+//                 "he",
+//                 "she",
+//                 "it",
+//                 "is",
+//                 "a",
+//                 "an",
+//                 "of",
+//                 "and",
+//                 "or",
+//                 "to",
+//                 "for",
+//                 "from",
+//                 "on",
+//                 "who",
+//                 "whom",
+//                 "why",
+//                 "when",
+//                 "which",
+//                 "with",
+//                 "this",
+//                 "that",
+//                 "in",
+//                 "at",
+//                 "by",
+//                 "be",
+//                 "not",
+//                 "was",
+//                 "were",
+//                 "has",
+//                 "have",
+//                 "had",
+//                 "do",
+//                 "does",
+//                 "did",
+//                 "so",
+//                 "some",
+//                 "any",
+//                 "how",
+//                 "can",
+//                 "could",
+//                 "should",
+//                 "would",
+//                 "there",
+//                 "here",
+//                 "just",
+//                 "than",
+//                 "because",
+//                 "but",
+//                 "its",
+//                 "it's",
+//                 "if",
+//                 ".",
+//                 ",",
+//                 "!",
+//                 "?",
+//                 ">",
+//                 "<",
+//                 ";",
+//                 "`",
+//                 "1",
+//                 "2",
+//                 "3",
+//                 "4",
+//                 "5",
+//                 "6",
+//                 "7",
+//                 "8",
+//                 "9",
+//                 "10",
+//             ]);
 
-      // Process the query to extract meaningful keywords
-      return query
-        .toLowerCase()
-        .replace(/[^\w\s]/g, "")
-        .split(/\s+/)
-        .filter((word) => !stopWords.has(word))
-        .map((word) => `%${word}%`);
-    };
+//             // Process the query to extract meaningful keywords
+//             return query
+//                 .toLowerCase()
+//                 .replace(/[^\w\s]/g, "")
+//                 .split(/\s+/)
+//                 .filter((word) => !stopWords.has(word))
+//                 .map((word) => `%${word}%`);
+//         };
 
-    // Function to get AI recommendations (mock implementation)
-    const keywords = filterKeywords(userPrompt);
+//         // Function to get AI recommendations (mock implementation)
+//         const keywords = filterKeywords(userPrompt);
 
-    // STEP 1: BASIC FILTERING
-    const result = await database.query(
-      `
-            SELECT * FROM products
-            WHERE name ILIKE ANY($1)
-            OR description ILIKE ANY($1)
-            OR category ILIKE ANY($1)
-            LIMIT 200;
-        `,
-      [keywords]
-    );
+//         // STEP 1: BASIC FILTERING
+//         const result = await database.query(
+//         `
+//             SELECT * FROM products
+//             WHERE name ILIKE ANY($1)
+//             OR description ILIKE ANY($1)
+//             OR category ILIKE ANY($1)
+//             LIMIT 200;     
+//         `,[keywords]);
 
-    const filteredProducts = result.rows;
+//         const filteredProducts = result.rows;
 
-    // Handle case when no products match the basic filtering
-    if (filteredProducts.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "No products found matching your prompt.",
-        products: [],
-      });
-    }
+//         // Handle case when no products match the basic filtering
+//         if (filteredProducts.length === 0) {
+//             return res.status(200).json({
+//                 success: true,
+//                 message: "No products found matching your prompt.",
+//                 products: [],
+//             });
+//         }
 
-    // STEP 2: AI-BASED RECOMMENDATION (Mocked for demonstration)
-    const { success, products } = await getAIRecommendation(
-      req,
-      res,
-      userPrompt,
-      filteredProducts
-    );
+//         // STEP 2: AI-BASED RECOMMENDATION (Mocked for demonstration)
+//         const { success, products } = await getAIRecommendation(
+//             req,
+//             res,
+//             userPrompt,
+//             filteredProducts
+//         );
 
-    // Send response
-    res.status(200).json({
-      success: success,
-      message: "AI filtered products.",
-      products,
-    });
-  }
-);
+//         // Send response
+//         res.status(200).json({
+//             success: success,
+//             message: "AI filtered products.",
+//             products,
+//         });
+//     }
+// );
