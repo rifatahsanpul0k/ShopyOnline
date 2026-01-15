@@ -2,10 +2,12 @@ import express from "express";
 import {
     createProduct,
     deleteProduct,
+    deleteReview,
+    // fetchAIFilteredProducts,
     fetchAllProducts,
     fetchSingleProduct,
     postProductReview,
-    updateProduct
+    updateProduct,
 } from "../controllers/productController.js";
 import { authorizedRoles, isAuthenticated, } from "../middlewares/authMiddleware.js";
 
@@ -23,8 +25,7 @@ router.get("/singleProduct/:productId", fetchSingleProduct);
 
 router.put("/post-new/review/:productId", isAuthenticated, postProductReview);
 
-// Not Tasked Yet
-// router.delete("/delete/review/:productId", isAuthenticated, deleteReview);
+router.delete("/delete/review/:productId", isAuthenticated, deleteReview);
 
 // router.post("/ai-search", isAuthenticated, fetchAIFilteredProducts);
 
