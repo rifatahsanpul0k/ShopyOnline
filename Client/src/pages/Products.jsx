@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   Star,
   SlidersHorizontal,
@@ -11,6 +11,7 @@ import {
   List,
 } from "lucide-react";
 import { formatPrice } from "../utils/currencyFormatter";
+import { fetchAllProducts } from "../store/slices/productSlice";
 
 // Dynamic category filters based on category type
 const CATEGORY_FILTERS = {
@@ -100,6 +101,7 @@ const CATEGORY_FILTERS = {
 };
 
 const Products = () => {
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
   const [expandedSections, setExpandedSections] = useState({
@@ -115,119 +117,20 @@ const Products = () => {
   const currentCategory =
     CATEGORY_FILTERS[categoryParam] || CATEGORY_FILTERS.laptops;
 
-  const { products } = useSelector((state) => state.product);
+  // --- STATE MANAGEMENT ---
 
-  // Dummy products for demonstration (replace with actual API data)
-  const dummyProducts = useMemo(
-    () => [
-      {
-        id: 1,
-        name: "HP Victus 15-fa1137tx Gaming Laptop",
-        price: 950,
-        originalPrice: 1200,
-        rating: 5,
-        category: "laptops",
-        subcategory: "Gaming Laptops",
-        brand: "HP",
-        image: "/img2.png",
-        specs: {
-          ram: "16GB",
-          storage: "512GB SSD",
-          processor: "Intel Core i5",
-        },
-        inStock: true,
-        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: 2,
-        name: 'Gaming Monitor 24" 165Hz',
-        price: 240,
-        rating: 4.8,
-        category: "gaming",
-        subcategory: "Monitors",
-        brand: "ASUS",
-        image: "/img2.png",
-        specs: { screenSize: "24 inch", refreshRate: "165Hz" },
-        inStock: true,
-        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: 3,
-        name: "Logitech G502 Hero Wired Gaming Mouse",
-        price: 55,
-        rating: 4.9,
-        category: "gaming",
-        subcategory: "Gaming Mice",
-        brand: "Logitech",
-        image: "/img2.png",
-        specs: { connectivity: "Wired", rgb: "RGB" },
-        inStock: true,
-        createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: 4,
-        name: "High-Performance Processor 16-Core",
-        price: 420,
-        rating: 4.7,
-        category: "components",
-        subcategory: "Processors",
-        brand: "Intel",
-        image: "/img2.png",
-        specs: { type: "CPU", performance: "High End" },
-        inStock: true,
-        createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: 5,
-        name: "MacBook Pro 14-inch M3",
-        price: 1999,
-        originalPrice: 2199,
-        rating: 5,
-        category: "laptops",
-        subcategory: "MacBooks",
-        brand: "Apple",
-        image: "/img2.png",
-        specs: { ram: "16GB", storage: "512GB SSD", processor: "Apple M3" },
-        inStock: true,
-        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      },
-      {
-        id: 6,
-        name: "Dell XPS 15 Ultrabook",
-        price: 1499,
-        rating: 4.8,
-        category: "laptops",
-        subcategory: "Ultrabooks",
-        brand: "Dell",
-        image: "/img2.png",
-        specs: { ram: "32GB", storage: "1TB SSD", processor: "Intel Core i7" },
-        inStock: false,
-        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      },
-    ],
-    []
-  );
+  // 1. Slider Bounds: The absolute min/max of the category.
+  // We lock this once data loads so the slider doesn't shrink when filtering.
+  const [sliderBounds, setSliderBounds] = useState({ min: 0, max: 2000 });
+  const [isBoundsInitialized, setIsBoundsInitialized] = useState(false);
 
-  // Use dummy products for now (replace with real products from Redux)
-  const allProducts =
-    products && products.length > 0 ? products : dummyProducts;
-
-  // Get price range from available products
-  const priceRange = useMemo(() => {
-    if (!allProducts || allProducts.length === 0) return { min: 0, max: 5000 };
-    const prices = allProducts.map((p) => p.price);
-    return {
-      min: Math.floor(Math.min(...prices) / 10) * 10,
-      max: Math.ceil(Math.max(...prices) / 10) * 10,
-    };
-  }, [allProducts]);
-
+  // 2. User Filters
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
     category: categoryParam,
     subcategory: searchParams.get("subcategory") || "",
-    minPrice: priceRange.min,
-    maxPrice: priceRange.max,
+    minPrice: 0,
+    maxPrice: 5000,
     sort: searchParams.get("sort") || "price-low",
     brands: [],
     specs: {},
@@ -235,9 +138,93 @@ const Products = () => {
     minRating: 0,
   });
 
-  // ----------------------------------------------------------------------
-  // SAFARI/WEBKIT FIX: Inject CSS to handle pointer-events on range inputs
-  // ----------------------------------------------------------------------
+  const { products, loading, totalProducts } = useSelector(
+    (state) => state.product
+  );
+
+  // --- EFFECTS ---
+
+  // 1. Reset everything when switching Categories (e.g. Laptops -> Gaming)
+  useEffect(() => {
+    setIsBoundsInitialized(false);
+    // Reset bounds to defaults until data loads
+    setSliderBounds({ min: 0, max: 5000 });
+
+    setFilters((prev) => ({
+      ...prev,
+      category: categoryParam,
+      minPrice: 0,
+      maxPrice: 5000,
+      search: "",
+    }));
+  }, [categoryParam]);
+
+  // 2. Initialize Slider Bounds from Data
+  // This runs only ONCE per category load to "learn" the price range
+  useEffect(() => {
+    if (!loading && products && products.length > 0 && !isBoundsInitialized) {
+      const prices = products.map((p) => parseFloat(p.price));
+      const min = Math.floor(Math.min(...prices));
+      const max = Math.ceil(Math.max(...prices));
+
+      // Ensure max is at least slightly higher than min to prevent slider errors
+      const safeMax = max === min ? max + 100 : max;
+
+      setSliderBounds({ min, max: safeMax });
+
+      // Set the initial filter position to the full range
+      setFilters((prev) => ({
+        ...prev,
+        minPrice: min,
+        maxPrice: safeMax,
+      }));
+
+      setIsBoundsInitialized(true);
+    }
+  }, [products, loading, isBoundsInitialized]);
+
+  // 3. Fetch Data based on Filters
+  useEffect(() => {
+    const params = {
+      category: filters.category,
+      search: filters.search,
+    };
+
+    // Only send price param if it differs from the Global Bounds
+    // This prevents sending a filter like "0-5000" on initial load, letting the backend return everything
+    if (isBoundsInitialized) {
+      if (
+        filters.minPrice > sliderBounds.min ||
+        filters.maxPrice < sliderBounds.max
+      ) {
+        params.price = `${filters.minPrice}-${filters.maxPrice}`;
+      }
+    }
+
+    // Add rating filter
+    if (filters.minRating > 0) {
+      params.ratings = filters.minRating;
+    }
+
+    // Add availability filter
+    if (filters.inStock) {
+      params.availability = "in-stock";
+    }
+
+    dispatch(fetchAllProducts(params));
+  }, [
+    dispatch,
+    filters.category,
+    filters.search,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.minRating,
+    filters.inStock,
+    // Note: We purposefully omit sliderBounds from dependency array to prevent loops
+    isBoundsInitialized,
+  ]);
+
+  // 4. Safari/WebKit CSS Injection (Kept from your previous code)
   useEffect(() => {
     const styleId = "slider-styles";
     if (!document.getElementById(styleId)) {
@@ -247,14 +234,12 @@ const Products = () => {
         .range-slider-input {
           -webkit-appearance: none;
           appearance: none;
-          pointer-events: none; /* Allows clicking through the track */
+          pointer-events: none;
           background: transparent;
         }
-
-        /* WebKit (Safari/Chrome) Thumb */
         .range-slider-input::-webkit-slider-thumb {
           -webkit-appearance: none;
-          pointer-events: auto; /* Re-enables clicking on the thumb */
+          pointer-events: auto;
           width: 20px;
           height: 20px;
           border-radius: 50%;
@@ -262,12 +247,10 @@ const Products = () => {
           border: 2px solid white;
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
           cursor: pointer;
-          margin-top: -8px; /* Centers thumb on track */
+          margin-top: -8px;
           position: relative;
           z-index: 20;
         }
-
-        /* Firefox Thumb */
         .range-slider-input::-moz-range-thumb {
           pointer-events: auto;
           width: 20px;
@@ -284,82 +267,27 @@ const Products = () => {
       document.head.appendChild(style);
     }
   }, []);
-  // ----------------------------------------------------------------------
 
-  // Update filters when price range calculation changes (e.g. data loaded)
-  useEffect(() => {
-    setFilters((prev) => ({
-      ...prev,
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
-    }));
-  }, [priceRange]);
-
-  // Filter products
+  // --- SORTING ---
   const filteredProducts = useMemo(() => {
-    let filtered = [...allProducts];
+    if (!products || products.length === 0) return [];
 
-    // Category filter
-    if (filters.category) {
-      filtered = filtered.filter((p) => p.category === filters.category);
-    }
+    let filtered = [...products];
 
-    // Subcategory filter
-    if (filters.subcategory) {
-      filtered = filtered.filter((p) => p.subcategory === filters.subcategory);
-    }
-
-    // Search filter
-    if (filters.search) {
-      filtered = filtered.filter((p) =>
-        p.name?.toLowerCase().includes(filters.search.toLowerCase())
-      );
-    }
-
-    // Price filter
-    filtered = filtered.filter(
-      (p) => p.price >= filters.minPrice && p.price <= filters.maxPrice
-    );
-
-    // Brand filter
-    if (filters.brands.length > 0) {
-      filtered = filtered.filter((p) => filters.brands.includes(p.brand));
-    }
-
-    // Stock filter
-    if (filters.inStock) {
-      filtered = filtered.filter((p) => p.inStock);
-    }
-
-    // Rating filter
-    if (filters.minRating > 0) {
-      filtered = filtered.filter((p) => (p.rating || 0) >= filters.minRating);
-    }
-
-    // Sorting
+    // Client-side sorting
     switch (filters.sort) {
       case "price-low":
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
         break;
       case "price-high":
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
         break;
       default:
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
     }
 
     return filtered;
-  }, [allProducts, filters]);
-
-  // Toggle brand filter
-  const toggleBrand = (brand) => {
-    setFilters((prev) => ({
-      ...prev,
-      brands: prev.brands.includes(brand)
-        ? prev.brands.filter((b) => b !== brand)
-        : [...prev.brands, brand],
-    }));
-  };
+  }, [products, filters.sort]);
 
   // Toggle section expansion
   const toggleSection = (section) => {
@@ -375,8 +303,9 @@ const Products = () => {
       search: "",
       category: categoryParam,
       subcategory: "",
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
+      // Reset to the learnt bounds
+      minPrice: sliderBounds.min,
+      maxPrice: sliderBounds.max,
       sort: "price-low",
       brands: [],
       specs: {},
@@ -403,9 +332,7 @@ const Products = () => {
             {currentCategory.name}
           </h1>
           <p className="text-black/60">
-            Showing {filteredProducts.length} of{" "}
-            {allProducts.filter((p) => p.category === filters.category).length}{" "}
-            results
+            Showing {filteredProducts.length} of {totalProducts || 0} results
           </p>
         </div>
 
@@ -453,14 +380,14 @@ const Products = () => {
                         className="absolute h-1.5 bg-black rounded-full z-10"
                         style={{
                           left: `calc(0.5rem + ${
-                            ((filters.minPrice - priceRange.min) /
-                              (priceRange.max - priceRange.min)) *
+                            ((filters.minPrice - sliderBounds.min) /
+                              (sliderBounds.max - sliderBounds.min)) *
                             100
                           }% * (100% - 1rem) / 100%)`,
                           right: `calc(0.5rem + ${
                             100 -
-                            ((filters.maxPrice - priceRange.min) /
-                              (priceRange.max - priceRange.min)) *
+                            ((filters.maxPrice - sliderBounds.min) /
+                              (sliderBounds.max - sliderBounds.min)) *
                               100
                           }% * (100% - 1rem) / 100%)`,
                         }}
@@ -469,8 +396,8 @@ const Products = () => {
                       {/* Min Slider Input */}
                       <input
                         type="range"
-                        min={priceRange.min}
-                        max={priceRange.max}
+                        min={sliderBounds.min}
+                        max={sliderBounds.max}
                         value={filters.minPrice}
                         onChange={(e) => {
                           const value = Math.min(
@@ -485,8 +412,8 @@ const Products = () => {
                       {/* Max Slider Input */}
                       <input
                         type="range"
-                        min={priceRange.min}
-                        max={priceRange.max}
+                        min={sliderBounds.min}
+                        max={sliderBounds.max}
                         value={filters.maxPrice}
                         onChange={(e) => {
                           const value = Math.max(
@@ -524,41 +451,6 @@ const Products = () => {
                   </div>
                 )}
               </div>
-
-              {/* Brand Filters */}
-              {currentCategory.specs?.brand && (
-                <div className="mb-8">
-                  <button
-                    onClick={() => toggleSection("specs")}
-                    className="w-full flex items-center justify-between mb-4 font-bold text-sm uppercase tracking-wider"
-                  >
-                    Brand
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform ${
-                        expandedSections.specs ? "" : "-rotate-90"
-                      }`}
-                    />
-                  </button>
-                  {expandedSections.specs && (
-                    <div className="space-y-2">
-                      {currentCategory.specs.brand.map((brand) => (
-                        <label
-                          key={brand}
-                          className="flex items-center gap-3 px-2 py-2 hover:bg-white/50 rounded-lg cursor-pointer transition"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={filters.brands.includes(brand)}
-                            onChange={() => toggleBrand(brand)}
-                            className="w-5 h-5 rounded border-2 border-black/20 accent-black cursor-pointer"
-                          />
-                          <span className="text-sm font-medium">{brand}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Rating Filter */}
               <div className="mb-8">
@@ -698,7 +590,14 @@ const Products = () => {
             </div>
 
             {/* Products */}
-            {filteredProducts.length > 0 ? (
+            {loading ? (
+              <div className="col-span-3 flex items-center justify-center py-20">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading products...</p>
+                </div>
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <div
                 className={
                   viewMode === "grid"
@@ -706,157 +605,133 @@ const Products = () => {
                     : "flex flex-col gap-6"
                 }
               >
-                {filteredProducts.map((product) => (
-                  <Link
-                    key={product.id}
-                    to={`/product/${product.id}`}
-                    className={
-                      viewMode === "grid"
-                        ? "group border-b-2 border-transparent hover:border-black transition-all pb-6"
-                        : "group flex gap-6 border-b-2 border-black/10 hover:border-black transition-all pb-6"
-                    }
-                  >
-                    {/* Image */}
-                    <div
+                {filteredProducts.map((product) => {
+                  // Get first image from images array or use placeholder
+                  const productImage =
+                    product.images && product.images.length > 0
+                      ? product.images[0].url
+                      : "https://via.placeholder.com/400";
+
+                  // Use price as-is from database (in USD)
+                  const displayPrice = product.price;
+
+                  return (
+                    <Link
+                      key={product.id}
+                      to={`/product/${product.id}`}
                       className={
                         viewMode === "grid"
-                          ? "relative h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4 rounded-2xl"
-                          : "relative w-48 h-48 flex-shrink-0 overflow-hidden bg-gray-50 flex items-center justify-center p-4 rounded-2xl"
+                          ? "group border-b-2 border-transparent hover:border-black transition-all pb-6"
+                          : "group flex gap-6 border-b-2 border-black/10 hover:border-black transition-all pb-6"
                       }
                     >
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
-                      />
-
-                      {/* Badges */}
-                      <div className="absolute top-4 left-4 flex flex-col gap-2">
-                        {!product.inStock && (
-                          <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">
-                            Out of Stock
-                          </span>
-                        )}
-                        {product.originalPrice && (
-                          <span className="bg-black text-white text-xs font-bold px-3 py-1 rounded-full uppercase">
-                            Sale
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Quick Add Button */}
-                      {viewMode === "grid" && (
-                        <button className="absolute bottom-4 right-4 bg-black text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg">
-                          <ShoppingBag className="w-5 h-5" />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Details */}
-                    <div
-                      className={
-                        viewMode === "list"
-                          ? "flex-1 flex flex-col justify-between"
-                          : ""
-                      }
-                    >
-                      <div>
-                        {/* Brand */}
-                        <p className="text-xs text-black/40 font-bold uppercase tracking-widest mb-2">
-                          {product.brand}
-                        </p>
-
-                        {/* Title */}
-                        <h3
-                          className={
-                            viewMode === "grid"
-                              ? "font-bold text-lg leading-tight mb-3 uppercase tracking-tight line-clamp-2 group-hover:text-black/70 transition"
-                              : "font-bold text-xl leading-tight mb-3 uppercase tracking-tight group-hover:text-black/70 transition"
-                          }
-                        >
-                          {product.name}
-                        </h3>
-
-                        {/* Specs */}
-                        {product.specs && (
-                          <div
-                            className={
-                              viewMode === "grid"
-                                ? "space-y-1 mb-4"
-                                : "flex flex-wrap gap-4 mb-4"
-                            }
-                          >
-                            {Object.entries(product.specs)
-                              .slice(0, viewMode === "list" ? 6 : 3)
-                              .map(([key, value]) => (
-                                <p
-                                  key={key}
-                                  className="text-[11px] text-black/50 font-medium uppercase tracking-wider"
-                                >
-                                  — {value}
-                                </p>
-                              ))}
-                          </div>
-                        )}
-
-                        {/* Rating */}
-                        <div className="flex items-center gap-1 mb-4">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(product.rating)
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                          <span className="text-sm text-black/60 ml-1">
-                            ({product.rating})
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Price */}
+                      {/* Image */}
                       <div
                         className={
-                          viewMode === "list"
-                            ? "flex items-center justify-between"
-                            : "flex items-center justify-between"
+                          viewMode === "grid"
+                            ? "relative h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4 rounded-2xl"
+                            : "relative w-48 h-48 flex-shrink-0 overflow-hidden bg-gray-50 flex items-center justify-center p-4 rounded-2xl"
                         }
                       >
-                        <div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl font-black">
-                              {formatPrice(product.price)}
+                        <img
+                          src={productImage}
+                          alt={product.name}
+                          className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
+                        />
+
+                        {/* Badges */}
+                        <div className="absolute top-4 left-4 flex flex-col gap-2">
+                          {product.stock === 0 && (
+                            <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">
+                              Out of Stock
                             </span>
-                            {product.originalPrice && (
-                              <span className="text-sm line-through text-black/40">
-                                {formatPrice(product.originalPrice)}
-                              </span>
-                            )}
-                          </div>
-                          {product.originalPrice && (
-                            <p className="text-xs text-green-600 font-bold mt-1">
-                              Save{" "}
-                              {Math.round(
-                                (1 - product.price / product.originalPrice) *
-                                  100
-                              )}
-                              %
-                            </p>
                           )}
                         </div>
-                        {viewMode === "list" && (
-                          <button className="bg-black text-white px-6 py-3 rounded-pill hover:bg-gray-800 transition font-bold uppercase tracking-wider flex items-center gap-2">
+
+                        {/* Quick Add Button */}
+                        {viewMode === "grid" && (
+                          <button className="absolute bottom-4 right-4 bg-black text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg">
                             <ShoppingBag className="w-5 h-5" />
-                            Add to Cart
                           </button>
                         )}
                       </div>
-                    </div>
-                  </Link>
-                ))}
+
+                      {/* Details */}
+                      <div
+                        className={
+                          viewMode === "list"
+                            ? "flex-1 flex flex-col justify-between"
+                            : ""
+                        }
+                      >
+                        <div>
+                          {/* Category */}
+                          <p className="text-xs text-black/40 font-bold uppercase tracking-widest mb-2">
+                            {product.category}
+                          </p>
+
+                          {/* Title */}
+                          <h3
+                            className={
+                              viewMode === "grid"
+                                ? "font-bold text-lg leading-tight mb-3 uppercase tracking-tight line-clamp-2 group-hover:text-black/70 transition"
+                                : "font-bold text-xl leading-tight mb-3 uppercase tracking-tight group-hover:text-black/70 transition"
+                            }
+                          >
+                            {product.name}
+                          </h3>
+
+                          {/* Description */}
+                          {viewMode === "list" && product.description && (
+                            <p className="text-sm text-black/60 mb-4 line-clamp-2">
+                              {product.description}
+                            </p>
+                          )}
+
+                          {/* Rating */}
+                          <div className="flex items-center gap-1 mb-4">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < Math.floor(product.ratings || 0)
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                            <span className="text-sm text-black/60 ml-1">
+                              ({parseFloat(product.ratings || 0).toFixed(1)})
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Price */}
+                        <div
+                          className={
+                            viewMode === "list"
+                              ? "flex items-center justify-between"
+                              : "flex items-center justify-between"
+                          }
+                        >
+                          <div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl font-black">
+                                {formatPrice(displayPrice)}
+                              </span>
+                            </div>
+                          </div>
+                          {viewMode === "list" && (
+                            <button className="bg-black text-white px-6 py-3 rounded-pill hover:bg-gray-800 transition font-bold uppercase tracking-wider flex items-center gap-2">
+                              <ShoppingBag className="w-5 h-5" />
+                              Add to Cart
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             ) : (
               <div className="bg-gray-50 rounded-3xl p-16 text-center">
