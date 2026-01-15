@@ -1,19 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { formatPrice } from "../utils/currencyFormatter";
+import {
+  fetchSingleProduct,
+  clearProductDetails,
+} from "../store/slices/productSlice";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [quantity, setQuantity] = useState(1);
-  const { products } = useSelector((state) => state.products);
+  const { productDetails, loading } = useSelector((state) => state.product);
 
-  // Try to find product from Redux
-  let product = products?.find((p) => p.id === id || p.id === parseInt(id));
+  // Fetch product details on mount
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchSingleProduct(id));
+    }
 
-  if (!product) {
+    // Cleanup on unmount
+    return () => {
+      dispatch(clearProductDetails());
+    };
+  }, [dispatch, id]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading product...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if product not found
+  if (!productDetails) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -28,6 +55,17 @@ const ProductDetail = () => {
       </div>
     );
   }
+
+  const product = productDetails;
+
+  // Get first image from images array or use placeholder
+  const productImage =
+    product.images && product.images.length > 0
+      ? product.images[0].url
+      : "https://via.placeholder.com/500";
+
+  // Convert price back to display format (multiply by 122)
+  const displayPrice = product.price * 122;
 
   const handleAddToCart = () => {
     // Dispatch add to cart action
@@ -53,7 +91,7 @@ const ProductDetail = () => {
           <div className="bg-white p-8 rounded-lg shadow">
             <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
               <img
-                src={product.image || "https://via.placeholder.com/500"}
+                src={productImage}
                 alt={product.name}
                 className="w-full h-full object-cover hover:scale-105 transition"
               />
@@ -68,12 +106,12 @@ const ProductDetail = () => {
                 <div className="flex text-yellow-400">
                   {[...Array(5)].map((_, i) => (
                     <span key={i}>
-                      {i < Math.round(product.rating || 0) ? "★" : "☆"}
+                      {i < Math.round(product.ratings || 0) ? "★" : "☆"}
                     </span>
                   ))}
                 </div>
                 <span className="text-gray-600">
-                  ({product.reviews || 0} reviews)
+                  ({product.reviews?.length || 0} reviews)
                 </span>
               </div>
             </div>
@@ -82,13 +120,8 @@ const ProductDetail = () => {
             <div className="space-y-2">
               <div className="flex items-center space-x-4">
                 <span className="text-4xl font-bold text-red-500">
-                  {formatPrice(product.price)}
+                  {formatPrice(displayPrice)}
                 </span>
-                {product.originalPrice && (
-                  <span className="text-xl text-gray-400 line-through">
-                    {formatPrice(product.originalPrice)}
-                  </span>
-                )}
               </div>
               {product.stock > 0 ? (
                 <p className="text-green-600 font-medium">
