@@ -105,6 +105,7 @@ const Products = () => {
   const [searchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
   const [expandedSections, setExpandedSections] = useState({
+    category: true,
     price: true,
     specs: true,
     availability: true,
@@ -353,6 +354,43 @@ const Products = () => {
                   <X className="w-4 h-4" />
                   Reset
                 </button>
+              </div>
+
+              {/* Category Filter */}
+              <div className="mb-8">
+                <button
+                  onClick={() => toggleSection("category")}
+                  className="w-full flex items-center justify-between mb-4 font-bold text-sm uppercase tracking-wider"
+                >
+                  Category
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${
+                      expandedSections.category ? "" : "-rotate-90"
+                    }`}
+                  />
+                </button>
+                {expandedSections.category && (
+                  <div className="space-y-2">
+                    {Object.entries(CATEGORY_FILTERS).map(([key, category]) => (
+                      <Link
+                        key={key}
+                        to={`/products?category=${key}`}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${
+                          categoryParam === key
+                            ? "bg-black text-white font-bold"
+                            : "bg-white hover:bg-black/5"
+                        }`}
+                      >
+                        <span className="text-sm font-medium">
+                          {category.name}
+                        </span>
+                        {categoryParam === key && (
+                          <span className="ml-auto text-xs">✓</span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Price Range */}
