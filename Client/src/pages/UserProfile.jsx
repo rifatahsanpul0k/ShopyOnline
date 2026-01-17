@@ -113,9 +113,11 @@ const UserProfile = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handleAvatarUpload = (e) => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validation
     if (!file.type.startsWith("image/")) {
       setErrors({ avatar: "Please upload an image file" });
       return;
@@ -125,11 +127,35 @@ const UserProfile = () => {
       return;
     }
     setErrors({});
+
+    // Preview immediately
     const reader = new FileReader();
     reader.onloadend = () => setAvatarPreview(reader.result);
     reader.readAsDataURL(file);
     setAvatarFile(file);
-    if (!isEditing) setIsEditing(true);
+
+    // Auto-save attempt
+    const formData = new FormData();
+    formData.append("name", profileForm.name);
+    formData.append("email", profileForm.email);
+    formData.append("phone", profileForm.phone || "");
+    formData.append("address", profileForm.address || "");
+    formData.append("avatar", file);
+
+    try {
+      const result = await dispatch(updateProfile(formData));
+
+      if (result.meta.requestStatus === "fulfilled") {
+        setSuccessMessage("Profile photo updated successfully!");
+        setAvatarFile(null); // Clear pending file
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        // If failed (e.g. missing fields), enter edit mode so user can fix
+        setIsEditing(true);
+      }
+    } catch (error) {
+      setIsEditing(true);
+    }
   };
 
   const handleUpdateProfile = async () => {
@@ -341,15 +367,15 @@ const UserProfile = () => {
                         setIsEditing(false);
                       }}
                       className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 group ${activeTab === item.id
-                          ? "bg-black text-white shadow-lg shadow-black/20"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-black"
+                        ? "bg-black text-white shadow-lg shadow-black/20"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-black"
                         }`}
                     >
                       <div className="flex items-center gap-3">
                         <item.icon
                           className={`w-5 h-5 ${activeTab === item.id
-                              ? "text-white"
-                              : "text-gray-400 group-hover:text-black"
+                            ? "text-white"
+                            : "text-gray-400 group-hover:text-black"
                             }`}
                         />
                         <span className="font-medium">{item.label}</span>

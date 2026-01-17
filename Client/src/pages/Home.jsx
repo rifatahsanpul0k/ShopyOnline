@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   ArrowRight,
   Clock,
+  Search,
 } from "lucide-react";
 import StockBadge from "../components/ui/StockBadge";
 
@@ -285,6 +286,8 @@ const Home = () => {
                 <p className="text-black/60 text-base lg:text-xl max-w-md leading-relaxed">
                   {HERO_SLIDES[currentSlide].subtitle}
                 </p>
+
+                {/* Hero Search Bar Removed */}
 
                 <div className="flex flex-wrap gap-4 pt-4">
                   <Link

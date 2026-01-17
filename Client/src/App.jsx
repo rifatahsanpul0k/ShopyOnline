@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getUser } from "./store/slices/authSlice";
+import { getUser, checkAuth } from "./store/slices/authSlice";
 
 // Layout
 import Navbar from "./components/Layout/Navbar";
@@ -46,10 +46,13 @@ const App = () => {
   const dispatch = useDispatch();
 
   // Check if user is authenticated on app load
+  // Check if user is authenticated on app load
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       dispatch(getUser());
+    } else {
+      dispatch(checkAuth());
     }
   }, [dispatch]);
 
