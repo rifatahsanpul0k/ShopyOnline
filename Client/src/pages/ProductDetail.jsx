@@ -117,29 +117,28 @@ const ProductDetail = () => {
             <div className="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible w-full lg:w-32 shrink-0">
               {product.images && product.images.length > 0
                 ? product.images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setSelectedImage(img.url)}
-                      className={`border rounded-[20px] overflow-hidden bg-[#F0EEED] h-32 w-full lg:h-40 flex items-center justify-center ${
-                        selectedImage === img.url
-                          ? "border-black"
-                          : "border-transparent"
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(img.url)}
+                    className={`border rounded-[20px] overflow-hidden bg-[#F0EEED] h-32 w-full lg:h-40 flex items-center justify-center ${selectedImage === img.url
+                        ? "border-black"
+                        : "border-transparent"
                       }`}
-                    >
-                      <img
-                        src={img.url}
-                        alt="thumbnail"
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))
+                  >
+                    <img
+                      src={img.url}
+                      alt="thumbnail"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))
                 : // Placeholder thumbnails if no gallery
-                  [1, 2, 3].map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-[#F0EEED] rounded-[20px] h-32 lg:h-40 w-full"
-                    ></div>
-                  ))}
+                [1, 2, 3].map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-[#F0EEED] rounded-[20px] h-32 lg:h-40 w-full"
+                  ></div>
+                ))}
             </div>
 
             {/* Main Image */}
@@ -304,13 +303,12 @@ const ProductDetail = () => {
                       key === "product"
                         ? "details"
                         : key === "rating"
-                        ? "reviews"
-                        : "faqs"
+                          ? "reviews"
+                          : "faqs"
                     )
                   }
-                  className={`flex-1 pb-4 text-lg font-medium transition-colors relative ${
-                    isActive ? "text-black" : "text-gray-400"
-                  }`}
+                  className={`flex-1 pb-4 text-lg font-medium transition-colors relative ${isActive ? "text-black" : "text-gray-400"
+                    }`}
                 >
                   {tab}
                   {isActive && (

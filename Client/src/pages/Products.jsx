@@ -67,24 +67,26 @@ const CATEGORY_FILTERS = {
       performance: ["Entry Level", "Mid Range", "High End", "Enthusiast"],
     },
   },
-  gaming: {
-    name: "Gaming",
+  smartphones: {
+    name: "Smartphones",
     subcategories: [
-      "Gaming Mice",
-      "Gaming Keyboards",
-      "Headsets",
-      "Controllers",
-      "Monitors",
-      "Chairs",
+      "Flagship Phones",
+      "Mid-Range Phones",
+      "Budget Phones",
+      "Gaming Phones",
+      "Foldable Phones",
+      "5G Phones",
     ],
     specs: {
-      brand: ["Logitech", "Razer", "Corsair", "SteelSeries", "HyperX"],
-      connectivity: ["Wired", "Wireless", "Bluetooth"],
-      rgb: ["RGB", "Non-RGB"],
+      brand: ["Apple", "Samsung", "Google", "OnePlus", "Xiaomi", "OPPO", "Vivo"],
+      storage: ["64GB", "128GB", "256GB", "512GB", "1TB"],
+      ram: ["4GB", "6GB", "8GB", "12GB", "16GB"],
+      camera: ["Single", "Dual", "Triple", "Quad", "50MP+"],
+      screen: ["6.1 inch", "6.5 inch", "6.7 inch", "6.8+ inch"],
     },
   },
   accessories: {
-    name: "Accessories",
+    name: "Watches",
     subcategories: [
       "Cables",
       "Adapters",
@@ -105,6 +107,7 @@ const Products = () => {
   const [searchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
   const [expandedSections, setExpandedSections] = useState({
+    category: true,
     price: true,
     specs: true,
     availability: true,
@@ -144,7 +147,7 @@ const Products = () => {
 
   // --- EFFECTS ---
 
-  // 1. Reset everything when switching Categories (e.g. Laptops -> Gaming)
+  // 1. Reset everything when switching Categories (e.g. Laptops -> Smartphones)
   useEffect(() => {
     setIsBoundsInitialized(false);
     // Reset bounds to defaults until data loads
@@ -355,6 +358,41 @@ const Products = () => {
                 </button>
               </div>
 
+              {/* Category Filter */}
+              <div className="mb-8">
+                <button
+                  onClick={() => toggleSection("category")}
+                  className="w-full flex items-center justify-between mb-4 font-bold text-sm uppercase tracking-wider"
+                >
+                  Category
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${expandedSections.category ? "" : "-rotate-90"
+                      }`}
+                  />
+                </button>
+                {expandedSections.category && (
+                  <div className="space-y-2">
+                    {Object.entries(CATEGORY_FILTERS).map(([key, category]) => (
+                      <Link
+                        key={key}
+                        to={`/products?category=${key}`}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${categoryParam === key
+                          ? "bg-black text-white font-bold"
+                          : "bg-white hover:bg-black/5"
+                          }`}
+                      >
+                        <span className="text-sm font-medium">
+                          {category.name}
+                        </span>
+                        {categoryParam === key && (
+                          <span className="ml-auto text-xs">✓</span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Price Range */}
               <div className="mb-8">
                 <button
@@ -363,9 +401,8 @@ const Products = () => {
                 >
                   Price Range
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform ${
-                      expandedSections.price ? "" : "-rotate-90"
-                    }`}
+                    className={`w-4 h-4 transition-transform ${expandedSections.price ? "" : "-rotate-90"
+                      }`}
                   />
                 </button>
                 {expandedSections.price && (
@@ -379,17 +416,15 @@ const Products = () => {
                       <div
                         className="absolute h-1.5 bg-black rounded-full z-10"
                         style={{
-                          left: `calc(0.5rem + ${
-                            ((filters.minPrice - sliderBounds.min) /
-                              (sliderBounds.max - sliderBounds.min)) *
+                          left: `calc(0.5rem + ${((filters.minPrice - sliderBounds.min) /
+                            (sliderBounds.max - sliderBounds.min)) *
                             100
-                          }% * (100% - 1rem) / 100%)`,
-                          right: `calc(0.5rem + ${
-                            100 -
+                            }% * (100% - 1rem) / 100%)`,
+                          right: `calc(0.5rem + ${100 -
                             ((filters.maxPrice - sliderBounds.min) /
                               (sliderBounds.max - sliderBounds.min)) *
-                              100
-                          }% * (100% - 1rem) / 100%)`,
+                            100
+                            }% * (100% - 1rem) / 100%)`,
                         }}
                       />
 
@@ -460,9 +495,8 @@ const Products = () => {
                 >
                   Rating
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform ${
-                      expandedSections.rating ? "" : "-rotate-90"
-                    }`}
+                    className={`w-4 h-4 transition-transform ${expandedSections.rating ? "" : "-rotate-90"
+                      }`}
                   />
                 </button>
                 {expandedSections.rating && (
@@ -485,11 +519,10 @@ const Products = () => {
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-4 h-4 ${
-                                i < rating
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
+                              className={`w-4 h-4 ${i < rating
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-gray-300"
+                                }`}
                             />
                           ))}
                           <span className="text-sm font-medium ml-1">& Up</span>
@@ -520,9 +553,8 @@ const Products = () => {
                 >
                   Availability
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform ${
-                      expandedSections.availability ? "" : "-rotate-90"
-                    }`}
+                    className={`w-4 h-4 transition-transform ${expandedSections.availability ? "" : "-rotate-90"
+                      }`}
                   />
                 </button>
                 {expandedSections.availability && (
@@ -568,21 +600,19 @@ const Products = () => {
               <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-pill">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-pill transition ${
-                    viewMode === "grid"
-                      ? "bg-black text-white"
-                      : "hover:bg-white"
-                  }`}
+                  className={`p-2 rounded-pill transition ${viewMode === "grid"
+                    ? "bg-black text-white"
+                    : "hover:bg-white"
+                    }`}
                 >
                   <Grid3x3 className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-pill transition ${
-                    viewMode === "list"
-                      ? "bg-black text-white"
-                      : "hover:bg-white"
-                  }`}
+                  className={`p-2 rounded-pill transition ${viewMode === "list"
+                    ? "bg-black text-white"
+                    : "hover:bg-white"
+                    }`}
                 >
                   <List className="w-5 h-5" />
                 </button>
@@ -693,11 +723,10 @@ const Products = () => {
                             {[...Array(5)].map((_, i) => (
                               <Star
                                 key={i}
-                                className={`w-4 h-4 ${
-                                  i < Math.floor(product.ratings || 0)
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "text-gray-300"
-                                }`}
+                                className={`w-4 h-4 ${i < Math.floor(product.ratings || 0)
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-300"
+                                  }`}
                               />
                             ))}
                             <span className="text-sm text-black/60 ml-1">

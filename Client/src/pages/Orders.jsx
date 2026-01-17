@@ -359,11 +359,10 @@ const Orders = () => {
               <button
                 key={filter.value}
                 onClick={() => setFilterStatus(filter.value)}
-                className={`px-6 py-3 rounded-pill font-medium transition ${
-                  filterStatus === filter.value
+                className={`px-6 py-3 rounded-pill font-medium transition ${filterStatus === filter.value
                     ? "bg-black text-white"
                     : "bg-gray-100 text-black hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {filter.label}
                 <span className="ml-2 text-sm opacity-70">
@@ -546,27 +545,24 @@ const Orders = () => {
                     <div key={idx} className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition ${
-                            item.completed
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition ${item.completed
                               ? "bg-black text-white"
                               : "bg-gray-200 text-gray-600"
-                          }`}
+                            }`}
                         >
                           {item.completed ? "✓" : idx + 1}
                         </div>
                         {idx < 3 && (
                           <div
-                            className={`w-1 h-8 ${
-                              item.completed ? "bg-black" : "bg-gray-200"
-                            }`}
+                            className={`w-1 h-8 ${item.completed ? "bg-black" : "bg-gray-200"
+                              }`}
                           />
                         )}
                       </div>
                       <div>
                         <p
-                          className={`font-semibold ${
-                            item.completed ? "text-black" : "text-gray-600"
-                          }`}
+                          className={`font-semibold ${item.completed ? "text-black" : "text-gray-600"
+                            }`}
                         >
                           {item.step}
                         </p>

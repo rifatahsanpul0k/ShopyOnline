@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
+import { fetchAllProducts } from "../store/slices/productSlice";
 import {
   Star,
   ChevronRight,
@@ -119,13 +120,17 @@ const FEATURED_TECH = [
 
 const CATEGORIES = [
   { name: "Laptops", image: "/img2.png", slug: "laptops" },
+  { name: "Smartphones", image: "/img2.png", slug: "smartphones" },
   { name: "Components", image: "/img2.png", slug: "components" },
-  { name: "Gaming", image: "/img2.png", slug: "gaming" },
-  { name: "Accessories", image: "/img2.png", slug: "accessories" },
+  { name: "Watches", image: "/img2.png", slug: "watches" },
 ];
 
 const Home = () => {
+  const dispatch = useDispatch();
   const { authUser } = useSelector((state) => state.auth);
+  const { newProducts, topRatedProducts, loading } = useSelector(
+    (state) => state.product
+  );
   const navigate = useNavigate();
 
   // Hero Slider State
@@ -138,6 +143,11 @@ const Home = () => {
   // Auth Modal State
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [intendedDestination, setIntendedDestination] = useState("");
+
+  // Fetch products on component mount
+  useEffect(() => {
+    dispatch(fetchAllProducts());
+  }, [dispatch]);
 
   // Auto-advance slider
   useEffect(() => {
@@ -162,17 +172,6 @@ const Home = () => {
     setCurrentSlide(index);
   };
 
-  // Filter products for New Arrivals (last 30 days, max 8)
-  const newArrivals = FEATURED_TECH.filter((product) => {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    return product.createdAt >= thirtyDaysAgo;
-  }).slice(0, 8);
-
-  // Filter products for Top Rated (4.5+ rating)
-  const topRatedProducts = FEATURED_TECH.filter(
-    (product) => product.rating >= 4.5
-  ).slice(0, 8);
-
   const handleCategoryClick = (categorySlug) => {
     if (!authUser) {
       setIntendedDestination(`/products?category=${categorySlug}`);
@@ -196,7 +195,7 @@ const Home = () => {
 
   // Product slider navigation
   const nextNewArrivals = () => {
-    if (newArrivalsIndex < newArrivals.length - 4) {
+    if (newArrivalsIndex < (newProducts?.length || 0) - 4) {
       setNewArrivalsIndex(newArrivalsIndex + 1);
     }
   };
@@ -208,7 +207,7 @@ const Home = () => {
   };
 
   const nextTopRated = () => {
-    if (topRatedIndex < topRatedProducts.length - 4) {
+    if (topRatedIndex < (topRatedProducts?.length || 0) - 4) {
       setTopRatedIndex(topRatedIndex + 1);
     }
   };
@@ -339,11 +338,10 @@ const Home = () => {
                       <button
                         key={index}
                         onClick={() => goToSlide(index)}
-                        className={`h-2 rounded-full transition-all ${
-                          index === currentSlide
-                            ? "w-12 bg-black"
-                            : "w-2 bg-black/30 hover:bg-black/50 hover:w-4"
-                        }`}
+                        className={`h-2 rounded-full transition-all ${index === currentSlide
+                          ? "w-12 bg-black"
+                          : "w-2 bg-black/30 hover:bg-black/50 hover:w-4"
+                          }`}
                         aria-label={`Go to slide ${index + 1}`}
                       />
                     ))}
@@ -401,11 +399,10 @@ const Home = () => {
                   <button
                     key={index}
                     onClick={() => goToSlide(index)}
-                    className={`h-2 rounded-full transition-all ${
-                      index === currentSlide
-                        ? "w-8 bg-black"
-                        : "w-2 bg-black/30 hover:bg-black/50"
-                    }`}
+                    className={`h-2 rounded-full transition-all ${index === currentSlide
+                      ? "w-8 bg-black"
+                      : "w-2 bg-black/30 hover:bg-black/50"
+                      }`}
                     aria-label={`Go to slide ${index + 1}`}
                   />
                 ))}
@@ -472,7 +469,7 @@ const Home = () => {
               </button>
               <button
                 onClick={nextNewArrivals}
-                disabled={newArrivalsIndex >= newArrivals.length - 4}
+                disabled={newArrivalsIndex >= (newProducts?.length || 0) - 4}
                 className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
                 aria-label="Next products"
               >
@@ -489,70 +486,93 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Slider Container */}
-        <div className="relative overflow-hidden">
-          <div
-            className="flex transition-transform duration-500 ease-out gap-10"
-            style={{
-              transform: `translateX(-${newArrivalsIndex * (100 / 4)}%)`,
-            }}
-          >
-            {newArrivals.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                onClick={handleProtectedNavigation}
-                className="group border-b-2 border-transparent hover:border-black transition-all pb-6 flex-shrink-0"
-                style={{ width: "calc(25% - 30px)" }}
-              >
-                <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
-                  />
-                </div>
-                <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight">
-                  {product.name}
-                </h3>
-                <div className="space-y-1 mb-4">
-                  {product.specs.map((spec, i) => (
-                    <p
-                      key={i}
-                      className="text-[11px] text-black/50 font-medium uppercase tracking-wider"
-                    >
-                      — {spec}
-                    </p>
-                  ))}
-                </div>
-                {/* Rating Stars */}
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < Math.floor(product.rating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="text-sm text-black/60 ml-1">
-                    ({product.rating})
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black">
-                    {formatPrice(product.price)}
-                  </span>
-                  <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
-                    <ShoppingBag className="w-5 h-5" />
-                  </button>
-                </div>
-              </Link>
-            ))}
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
           </div>
-        </div>
+        ) : newProducts && newProducts.length > 0 ? (
+          /* Slider Container */
+          <div className="relative overflow-hidden">
+            <div
+              className="flex transition-transform duration-500 ease-out gap-10"
+              style={{
+                transform: `translateX(-${newArrivalsIndex * (100 / 4)}%)`,
+              }}
+            >
+              {newProducts.map((product) => {
+                // Parse images if it's a string
+                const images =
+                  typeof product.images === "string"
+                    ? JSON.parse(product.images)
+                    : product.images;
+                const productImage =
+                  images && images.length > 0 ? images[0].url : "/img2.png";
+
+                return (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.id}`}
+                    onClick={handleProtectedNavigation}
+                    className="group border-b-2 border-transparent hover:border-black transition-all pb-6 flex-shrink-0"
+                    style={{ width: "calc(25% - 30px)" }}
+                  >
+                    <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
+                      <img
+                        src={productImage}
+                        alt={product.name}
+                        className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                      />
+                    </div>
+                    <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight line-clamp-2">
+                      {product.name}
+                    </h3>
+                    <div className="space-y-1 mb-4">
+                      <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
+                        — {product.category}
+                      </p>
+                      <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
+                        — Stock: {product.stock}
+                      </p>
+                    </div>
+                    {/* Rating Stars */}
+                    <div className="flex items-center gap-1 mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${i < Math.floor(product.ratings || 0)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                            }`}
+                        />
+                      ))}
+                      <span className="text-sm text-black/60 ml-1">
+                        ({product.ratings ? Number(product.ratings).toFixed(1) : "0.0"})
+                      </span>
+                      {product.review_count && (
+                        <span className="text-xs text-black/40 ml-1">
+                          ({product.review_count} reviews)
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-black">
+                        {formatPrice(product.price)}
+                      </span>
+                      <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
+                        <ShoppingBag className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-xl text-black/60">No new arrivals at the moment</p>
+          </div>
+        )}
       </section>
 
       {/* 4. TOP RATED PRODUCTS - Rating 4.5 or higher */}
@@ -574,7 +594,7 @@ const Home = () => {
               </button>
               <button
                 onClick={nextTopRated}
-                disabled={topRatedIndex >= topRatedProducts.length - 4}
+                disabled={topRatedIndex >= (topRatedProducts?.length || 0) - 4}
                 className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
                 aria-label="Next products"
               >
@@ -591,70 +611,93 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Slider Container */}
-        <div className="relative overflow-hidden">
-          <div
-            className="flex transition-transform duration-500 ease-out gap-10"
-            style={{
-              transform: `translateX(-${topRatedIndex * (100 / 4)}%)`,
-            }}
-          >
-            {topRatedProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                onClick={handleProtectedNavigation}
-                className="group border-b-2 border-transparent hover:border-black transition-all pb-6 bg-white p-6 rounded-lg flex-shrink-0"
-                style={{ width: "calc(25% - 30px)" }}
-              >
-                <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
-                  />
-                </div>
-                <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight">
-                  {product.name}
-                </h3>
-                <div className="space-y-1 mb-4">
-                  {product.specs.map((spec, i) => (
-                    <p
-                      key={i}
-                      className="text-[11px] text-black/50 font-medium uppercase tracking-wider"
-                    >
-                      — {spec}
-                    </p>
-                  ))}
-                </div>
-                {/* Rating Stars - Prominent for top rated */}
-                <div className="flex items-center gap-1 mb-4 bg-yellow-50 p-2 rounded">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        i < Math.floor(product.rating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="text-sm font-bold text-black ml-1">
-                    {product.rating} / 5
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black">
-                    {formatPrice(product.price)}
-                  </span>
-                  <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
-                    <ShoppingBag className="w-5 h-5" />
-                  </button>
-                </div>
-              </Link>
-            ))}
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
           </div>
-        </div>
+        ) : topRatedProducts && topRatedProducts.length > 0 ? (
+          /* Slider Container */
+          <div className="relative overflow-hidden">
+            <div
+              className="flex transition-transform duration-500 ease-out gap-10"
+              style={{
+                transform: `translateX(-${topRatedIndex * (100 / 4)}%)`,
+              }}
+            >
+              {topRatedProducts.map((product) => {
+                // Parse images if it's a string
+                const images =
+                  typeof product.images === "string"
+                    ? JSON.parse(product.images)
+                    : product.images;
+                const productImage =
+                  images && images.length > 0 ? images[0].url : "/img2.png";
+
+                return (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.id}`}
+                    onClick={handleProtectedNavigation}
+                    className="group border-b-2 border-transparent hover:border-black transition-all pb-6 bg-white p-6 rounded-lg flex-shrink-0"
+                    style={{ width: "calc(25% - 30px)" }}
+                  >
+                    <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
+                      <img
+                        src={productImage}
+                        alt={product.name}
+                        className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                      />
+                    </div>
+                    <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight line-clamp-2">
+                      {product.name}
+                    </h3>
+                    <div className="space-y-1 mb-4">
+                      <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
+                        — {product.category}
+                      </p>
+                      <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
+                        — Stock: {product.stock}
+                      </p>
+                    </div>
+                    {/* Rating Stars - Prominent for top rated */}
+                    <div className="flex items-center gap-1 mb-4 bg-yellow-50 p-2 rounded">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-5 h-5 ${i < Math.floor(product.ratings || 0)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                            }`}
+                        />
+                      ))}
+                      <span className="text-sm font-bold text-black ml-1">
+                        {product.ratings ? Number(product.ratings).toFixed(1) : "0.0"} / 5
+                      </span>
+                    </div>
+                    {product.review_count && (
+                      <p className="text-xs text-black/50 mb-3">
+                        {product.review_count} customer reviews
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-black">
+                        {formatPrice(product.price)}
+                      </span>
+                      <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
+                        <ShoppingBag className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-xl text-black/60">No top rated products available</p>
+          </div>
+        )}
       </section>
 
       {/* 5. TRUST FEATURES (Clean Grid) */}

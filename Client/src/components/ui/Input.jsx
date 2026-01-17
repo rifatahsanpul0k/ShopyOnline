@@ -9,8 +9,8 @@ const Input = ({
   type = "text",
   placeholder = "",
   value = "",
-  onChange = () => {},
-  onBlur = () => {},
+  onChange = () => { },
+  onBlur = () => { },
   disabled = false,
   error = "",
   label = "",
@@ -31,9 +31,8 @@ const Input = ({
     ? "opacity-50 cursor-not-allowed bg-gray-50"
     : "";
 
-  const inputClassName = `${baseStyles} ${errorStyles} ${disabledStyles} ${
-    Icon ? "pl-10" : ""
-  } ${className}`;
+  const inputClassName = `${baseStyles} ${errorStyles} ${disabledStyles} ${Icon ? "pl-10" : ""
+    } ${className}`;
 
   return (
     <div className="w-full">

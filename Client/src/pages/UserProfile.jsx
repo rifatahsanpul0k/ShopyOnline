@@ -321,19 +321,17 @@ const UserProfile = () => {
                       setActiveTab(item.id);
                       setIsEditing(false);
                     }}
-                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 group ${
-                      activeTab === item.id
+                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 group ${activeTab === item.id
                         ? "bg-black text-white shadow-lg shadow-black/20"
                         : "text-gray-600 hover:bg-gray-50 hover:text-black"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <item.icon
-                        className={`w-5 h-5 ${
-                          activeTab === item.id
+                        className={`w-5 h-5 ${activeTab === item.id
                             ? "text-white"
                             : "text-gray-400 group-hover:text-black"
-                        }`}
+                          }`}
                       />
                       <span className="font-medium">{item.label}</span>
                     </div>
@@ -495,9 +493,8 @@ const UserProfile = () => {
                       ].map((item, index) => (
                         <div
                           key={index}
-                          className={`p-5 rounded-2xl bg-gray-50 border border-gray-100 ${
-                            index < 2 ? "md:col-span-2" : ""
-                          }`}
+                          className={`p-5 rounded-2xl bg-gray-50 border border-gray-100 ${index < 2 ? "md:col-span-2" : ""
+                            }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className="p-2.5 bg-white rounded-xl shadow-sm text-gray-400">
