@@ -69,7 +69,7 @@ export async function generatePaymentIntent(orderId, totalPrice) {
 
         // Create new payment intent
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(Number(totalPrice)), // Ensure integer (cents)
+            amount: Math.round(Number(totalPrice) * 100), // Convert dollars to cents
             currency: "usd",
         });
 
