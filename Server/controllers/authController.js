@@ -106,7 +106,7 @@ export const forgotPassword = catchAsyncErrors(async (req, res, next) => {
         [hashedToken, resetPasswordExpireTime / 1000, email]
     );
 
-    const resetPasswordUrl = `${frontendUrl}/password/reset/${resetToken}`;
+    const resetPasswordUrl = `${frontendUrl}/auth/reset-password/${resetToken}`;
 
     const message = generateEmailTemplate(resetPasswordUrl);
 

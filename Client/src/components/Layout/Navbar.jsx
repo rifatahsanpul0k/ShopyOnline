@@ -8,6 +8,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dispatch = useDispatch();
   const { authUser } = useSelector((state) => state.auth);
+  const state = useSelector((state) => state);
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -50,7 +51,15 @@ const Navbar = () => {
             {authUser && (
               <Link to="/cart" className="hover:text-gray-600 relative">
                 <ShoppingCart size={24} />
-                {/* Cart Counter Badge could go here */}
+                {/* Cart Counter Badge */}
+                {state.cart?.cart?.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
+                    {state.cart.cart.reduce(
+                      (total, item) => total + item.quantity,
+                      0
+                    )}
+                  </span>
+                )}
               </Link>
             )}
 
