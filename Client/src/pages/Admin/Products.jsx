@@ -13,7 +13,9 @@ import {
     Star,
     UploadCloud,
     Layers,
-    XCircle
+    XCircle,
+    Grid3x3,
+    List
 } from "lucide-react";
 import {
     fetchAllProductsAdmin,
@@ -33,6 +35,7 @@ const AdminProducts = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [viewMode, setViewMode] = useState("grid");
 
     // Form state
     const [formData, setFormData] = useState({
@@ -246,7 +249,7 @@ const AdminProducts = () => {
 
     const stats = {
         total: products.length,
-        lowStock: products.filter((p) => p.stock <= 5 && p.stock > 0).length,
+        limitedStock: products.filter((p) => p.stock <= 5 && p.stock > 0).length,
         outOfStock: products.filter((p) => p.stock === 0).length,
         totalValue: products.reduce((sum, p) => sum + parseFloat(p.price || 0) * parseInt(p.stock || 0), 0),
     };
@@ -298,7 +301,7 @@ const AdminProducts = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <ProductStatCard label="Total Products" value={stats.total} icon={Package} />
                 <ProductStatCard label="Inventory Value" value={formatPrice(stats.totalValue)} icon={DollarSign} />
-                <ProductStatCard label="Low Stock" value={stats.lowStock} icon={AlertCircle} alert={stats.lowStock > 0} />
+                <ProductStatCard label="Limited Stock" value={stats.limitedStock} icon={AlertCircle} alert={stats.limitedStock > 0} />
                 <ProductStatCard label="Out of Stock" value={stats.outOfStock} icon={Layers} alert={stats.outOfStock > 0} />
             </div>
 
@@ -314,18 +317,40 @@ const AdminProducts = () => {
                         className="w-full pl-12 pr-4 py-3 bg-transparent border-none focus:ring-0 placeholder-gray-400 text-black"
                     />
                 </div>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-full">
+                    <button
+                        onClick={() => setViewMode("grid")}
+                        className={`p-2 rounded-full transition ${viewMode === "grid"
+                            ? "bg-black text-white"
+                            : "hover:bg-white"
+                            }`}
+                    >
+                        <Grid3x3 className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={() => setViewMode("list")}
+                        className={`p-2 rounded-full transition ${viewMode === "list"
+                            ? "bg-black text-white"
+                            : "hover:bg-white"
+                            }`}
+                    >
+                        <List className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
 
-            {/* 4. Products Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {/* 4. Products Grid/List */}
+            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "flex flex-col gap-6"}>
                 {filteredProducts.length > 0 ? (
                     filteredProducts.map((product) => (
                         <div
                             key={product.id}
-                            className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
+                            className={`group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 ${viewMode === "grid" ? "flex flex-col" : "flex gap-6 items-start"}`}
                         >
                             {/* Image Area */}
-                            <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
+                            <div className={`${viewMode === "grid" ? "aspect-[4/5] w-full" : "w-40 h-40 flex-shrink-0"} bg-gray-100 relative overflow-hidden`}>
                                 {product.images && product.images[0]?.url ? (
                                     <img
                                         src={product.images[0].url}
@@ -343,11 +368,11 @@ const AdminProducts = () => {
                                 <div className="absolute top-3 right-3">
                                     {product.stock === 0 ? (
                                         <span className="px-3 py-1 bg-black text-white text-[10px] font-bold uppercase tracking-wide rounded-full">
-                                            Sold Out
+                                            Out of Stock
                                         </span>
                                     ) : product.stock <= 5 ? (
                                         <span className="px-3 py-1 bg-red-100 text-red-600 text-[10px] font-bold uppercase tracking-wide rounded-full border border-red-200">
-                                            Low Stock
+                                            Limited Stock
                                         </span>
                                     ) : (
                                         <span className="px-3 py-1 bg-white/90 backdrop-blur text-black text-[10px] font-bold uppercase tracking-wide rounded-full shadow-sm">
@@ -358,7 +383,7 @@ const AdminProducts = () => {
                             </div>
 
                             {/* Content Area */}
-                            <div className="p-5 flex flex-col flex-1">
+                            <div className={`${viewMode === "grid" ? "p-5 flex flex-col flex-1" : "p-5 flex-1 flex flex-col justify-between"}`}>
                                 <div className="mb-1 flex items-center justify-between">
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                         {product.category}
@@ -369,17 +394,17 @@ const AdminProducts = () => {
                                     </div>
                                 </div>
 
-                                <h3 className="font-bold text-lg mb-1 leading-tight text-black line-clamp-1">
+                                <h3 className={`font-bold ${viewMode === "grid" ? "text-lg" : "text-base"} mb-1 leading-tight text-black line-clamp-1`}>
                                     {product.name}
                                 </h3>
-                                <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-1">
+                                <p className={`text-sm text-gray-500 ${viewMode === "grid" ? "line-clamp-2" : "line-clamp-1"} mb-4 flex-1`}>
                                     {product.description}
                                 </p>
 
-                                <div className="flex items-end justify-between pt-4 border-t border-gray-50">
+                                <div className={`flex items-end justify-between pt-4 border-t border-gray-50 ${viewMode === "list" ? "pt-3" : ""}`}>
                                     <div>
                                         <p className="text-xs text-gray-400 mb-0.5">Price</p>
-                                        <p className="text-xl font-black text-black">
+                                        <p className={`${viewMode === "grid" ? "text-xl" : "text-lg"} font-black text-black`}>
                                             {formatPrice(product.price)}
                                         </p>
                                     </div>
@@ -391,7 +416,7 @@ const AdminProducts = () => {
                             </div>
 
                             {/* Actions Overlay (Always visible on mobile, hover on desktop) */}
-                            <div className="px-5 pb-5 pt-0 flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200">
+                            <div className={`${viewMode === "grid" ? "px-5 pb-5 pt-0" : "px-5 pb-5"} flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200`}>
                                 <button
                                     onClick={() => handleOpenModal("edit", product)}
                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800"

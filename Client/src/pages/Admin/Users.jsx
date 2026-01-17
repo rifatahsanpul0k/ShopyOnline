@@ -7,8 +7,7 @@ import {
     Mail,
     Calendar,
     User,
-    ShieldAlert,
-    MoreHorizontal
+    ShieldAlert
 } from "lucide-react";
 import { fetchAllUsers, deleteUser } from "../../services/adminService";
 import { toast } from "react-toastify";
@@ -121,8 +120,8 @@ const Users = () => {
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">User Profile</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Contact Info</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Role</th>
+                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</th>
+                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Phone</th>
                                 <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Joined</th>
                                 <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
                             </tr>
@@ -135,7 +134,7 @@ const Users = () => {
                                     <tr key={i} className="animate-pulse">
                                         <td className="px-8 py-5"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-gray-100 rounded-full"></div><div className="h-4 w-32 bg-gray-100 rounded"></div></div></td>
                                         <td className="px-8 py-5"><div className="h-4 w-40 bg-gray-100 rounded"></div></td>
-                                        <td className="px-8 py-5"><div className="h-6 w-20 bg-gray-100 rounded-full"></div></td>
+                                        <td className="px-8 py-5"><div className="h-4 w-32 bg-gray-100 rounded"></div></td>
                                         <td className="px-8 py-5"><div className="h-4 w-24 bg-gray-100 rounded"></div></td>
                                         <td className="px-8 py-5"><div className="h-8 w-8 bg-gray-100 rounded-lg ml-auto"></div></td>
                                     </tr>
@@ -171,11 +170,11 @@ const Users = () => {
                                             </div>
                                         </td>
 
-                                        {/* Role Badge */}
+                                        {/* Phone */}
                                         <td className="px-8 py-5 whitespace-nowrap">
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase bg-blue-50 text-blue-600 tracking-wide">
-                                                Customer
-                                            </span>
+                                            <div className="text-sm text-gray-600 font-medium">
+                                                {user.phone || "N/A"}
+                                            </div>
                                         </td>
 
                                         {/* Date */}
@@ -189,9 +188,6 @@ const Users = () => {
                                         {/* Actions */}
                                         <td className="px-8 py-5 whitespace-nowrap text-right">
                                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
-                                                    <MoreHorizontal size={18} />
-                                                </button>
                                                 <button
                                                     onClick={() => handleDelete(user.id)}
                                                     className="p-2 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 rounded-lg transition-colors"
@@ -206,7 +202,7 @@ const Users = () => {
                             ) : (
                                 // Empty State
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-24 text-center">
+                                    <td colSpan="4" className="px-6 py-24 text-center">
                                         <div className="flex flex-col items-center justify-center">
                                             <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                                                 <User size={32} className="text-gray-300" />
@@ -222,7 +218,7 @@ const Users = () => {
                 </div>
 
                 {/* 3. Pagination Footer */}
-                {!loading && filteredUsers.length > 0 && (
+                {!loading && filteredUsers.length > 0 && totalPages > 1 && (
                     <div className="px-8 py-5 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
                         <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                             Showing Page <span className="text-black">{page}</span> of {totalPages}
