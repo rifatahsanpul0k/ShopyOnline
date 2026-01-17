@@ -5,10 +5,10 @@ import { ADMIN_DASHBOARD_ROUTE, HOME_ROUTE, LOGIN_ROUTE } from "../constants/rou
 
 // Admin Protected Route - Only admins can access
 export const AdminProtectedRoute = ({ children }) => {
-    const { authUser, loading } = useSelector((state) => state.auth);
+    const { authUser, isCheckingAuth } = useSelector((state) => state.auth);
 
     // Show loading while checking auth
-    if (loading) {
+    if (isCheckingAuth) {
         return (
             <div className="flex items-center justify-center h-screen">
                 <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-black"></div>

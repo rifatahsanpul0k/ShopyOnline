@@ -73,3 +73,13 @@ export const getOrderStatsAPI = async () => {
     throw error.response?.data || error;
   }
 };
+
+// Delete an order (for users to delete their own delivered orders)
+export const deleteOrderAPI = async (orderId) => {
+  try {
+    const response = await axios.delete(`${API_URL}/${orderId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
