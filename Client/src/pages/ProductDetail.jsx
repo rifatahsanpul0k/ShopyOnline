@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { Minus, Plus, Star, Check, ChevronRight } from "lucide-react"; // Added Icons
+import { Minus, Plus, Star, Check, ChevronRight, SlidersHorizontal, X } from "lucide-react"; // Added Icons
+import StockBadge from "../components/ui/StockBadge";
 import { formatPrice } from "../utils/currencyFormatter";
 import {
   fetchSingleProduct,
   clearProductDetails,
+  postReview,
 } from "../store/slices/productSlice";
 import { addToCart } from "../store/slices/cartSlice";
 import { toast } from "react-toastify";
@@ -18,10 +20,14 @@ const ProductDetail = () => {
   // UI State
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [activeTab, setActiveTab] = useState("reviews"); // Default to reviews as per design emphasis
+
+  // Review State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
 
   // Data State
-  const { productDetails, loading } = useSelector((state) => state.product);
+  const { productDetails, loading, isPostingReview } = useSelector((state) => state.product);
 
   // Fetch product details on mount
   useEffect(() => {
@@ -95,6 +101,25 @@ const ProductDetail = () => {
     toast.success("Added to cart!");
   };
 
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!comment.trim()) {
+      toast.error("Please write a comment");
+      return;
+    }
+
+    try {
+      await dispatch(postReview({ productId: id, rating, comment })).unwrap();
+      setShowReviewModal(false);
+      setComment("");
+      setRating(5);
+      // Refresh product data to show new review
+      dispatch(fetchSingleProduct(id));
+    } catch (error) {
+      console.error("Failed to post review:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans text-black pb-20">
       {/* Top Divider Line */}
@@ -161,6 +186,9 @@ const ProductDetail = () => {
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
+              <div className="absolute top-4 left-4 z-10">
+                {product && <StockBadge stock={product.stock} />}
+              </div>
             </div>
           </div>
 
@@ -218,7 +246,7 @@ const ProductDetail = () => {
             <div className="mb-6 pb-6 border-b border-gray-200">
               {product.stock > 0 ? (
                 <p className="text-green-600 font-medium">
-                  ✓ In Stock - {product.stock} units available
+                  ✓ In Stock
                 </p>
               ) : (
                 <p className="text-red-600 font-medium">✗ Out of Stock</p>
@@ -298,41 +326,8 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Tabbed Content Section (Reviews) */}
+        {/* Reviews Section (Formerly Tabs) */}
         <div className="mt-16">
-          {/* Tabs Header */}
-          <div className="flex border-b border-gray-200 mb-8">
-            {["Product Details", "Rating & Reviews", "FAQs"].map((tab) => {
-              const key = tab.toLowerCase().replace(/ & /g, "-").split(" ")[0]; // basic key logic
-              const isActive =
-                activeTab.includes(key) ||
-                (tab === "Rating & Reviews" && activeTab === "reviews");
-
-              return (
-                <button
-                  key={tab}
-                  onClick={() =>
-                    setActiveTab(
-                      key === "product"
-                        ? "details"
-                        : key === "rating"
-                          ? "reviews"
-                          : "faqs"
-                    )
-                  }
-                  className={`flex-1 pb-4 text-lg font-medium transition-colors relative ${isActive ? "text-black" : "text-gray-400"
-                    }`}
-                >
-                  {tab}
-                  {isActive && (
-                    <div className="absolute bottom-0 left-0 w-full h-[2px] bg-black"></div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Tab Content (Reviews View) */}
           <div className="py-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold flex items-center gap-2">
@@ -343,18 +338,11 @@ const ProductDetail = () => {
               </h3>
               <div className="flex gap-2">
                 <button className="bg-[#F0F0F0] hover:bg-gray-200 rounded-full w-12 h-12 flex items-center justify-center">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M3 6h18M7 12h10M10 18h4" />
-                  </svg>
+                  <SlidersHorizontal className="w-5 h-5 text-black" />
                 </button>
-                <button className="bg-black text-white px-6 py-3 rounded-full font-medium text-sm">
+                <button
+                  onClick={() => setShowReviewModal(true)}
+                  className="bg-black text-white px-6 py-3 rounded-full font-medium text-sm">
                   Write a Review
                 </button>
               </div>
@@ -397,6 +385,9 @@ const ProductDetail = () => {
                     <p className="text-gray-600 mb-4 text-sm leading-relaxed">
                       {review.comment}
                     </p>
+                    <p className="text-gray-400 text-xs font-medium">
+                      Posted on {new Date().toLocaleDateString()}
+                    </p>
                   </div>
                 ))
               ) : (
@@ -416,6 +407,62 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[20px] p-8 max-w-lg w-full relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => setShowReviewModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-black transition"
+            >
+              <X size={24} />
+            </button>
+
+            <h2 className="text-2xl font-black uppercase mb-6">Write a Review</h2>
+
+            <form onSubmit={handleReviewSubmit}>
+              <div className="mb-6">
+                <label className="block text-sm font-bold uppercase mb-2">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className="transition-transform hover:scale-110"
+                    >
+                      <Star
+                        size={32}
+                        className={star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-bold uppercase mb-2">Your Review</label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share your experience with this product..."
+                  className="w-full h-32 p-4 rounded-xl border-2 border-gray-200 focus:border-black outline-none resize-none transition"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isPostingReview}
+                className="w-full bg-black text-white py-4 rounded-full font-bold uppercase hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPostingReview ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

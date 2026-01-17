@@ -314,32 +314,52 @@ const UserProfile = () => {
                     icon: Settings,
                     label: "Security & Settings",
                   },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      setIsEditing(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 group ${activeTab === item.id
-                        ? "bg-black text-white shadow-lg shadow-black/20"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-black"
-                      }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon
-                        className={`w-5 h-5 ${activeTab === item.id
-                            ? "text-white"
-                            : "text-gray-400 group-hover:text-black"
-                          }`}
-                      />
-                      <span className="font-medium">{item.label}</span>
-                    </div>
-                    {activeTab === item.id && (
-                      <ChevronRight className="w-4 h-4" />
-                    )}
-                  </button>
-                ))}
+                ].map((item) => {
+                  // Special handling for orders - navigate to dedicated page
+                  if (item.id === 'orders') {
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => navigate('/orders')}
+                        className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 group text-gray-600 hover:bg-gray-50 hover:text-black"
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon className="w-5 h-5 text-gray-400 group-hover:text-black" />
+                          <span className="font-medium">{item.label}</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    );
+                  }
+
+                  // Regular tab switching for other items
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setIsEditing(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 group ${activeTab === item.id
+                          ? "bg-black text-white shadow-lg shadow-black/20"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-black"
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon
+                          className={`w-5 h-5 ${activeTab === item.id
+                              ? "text-white"
+                              : "text-gray-400 group-hover:text-black"
+                            }`}
+                        />
+                        <span className="font-medium">{item.label}</span>
+                      </div>
+                      {activeTab === item.id && (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </button>
+                  );
+                })}
 
                 <button
                   onClick={handleLogout}

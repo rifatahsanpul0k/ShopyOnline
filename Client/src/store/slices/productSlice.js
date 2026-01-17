@@ -49,6 +49,26 @@ export const fetchSingleProduct = createAsyncThunk(
   }
 );
 
+// Post a product review
+export const postReview = createAsyncThunk(
+  "product/postReview",
+  async ({ productId, rating, comment }, thunkAPI) => {
+    try {
+      const res = await axiosInstance.put(
+        `/product/post-new/review/${productId}`,
+        { rating, comment }
+      );
+      toast.success("Review submitted successfully");
+      return res.data;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to post review");
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Failed to post review"
+      );
+    }
+  }
+);
+
 const productSlice = createSlice({
   name: "product",
   initialState: {
@@ -97,11 +117,41 @@ const productSlice = createSlice({
       .addCase(fetchSingleProduct.fulfilled, (state, action) => {
         state.loading = false;
         state.productDetails = action.payload.product || null;
+        // Ensure reviews are parsed if they are strings (based on how other JSON fields were handled)
+        if (state.productDetails && typeof state.productDetails.reviews === 'string') {
+          try {
+            state.productDetails.reviews = JSON.parse(state.productDetails.reviews);
+          } catch (e) {
+            state.productDetails.reviews = [];
+          }
+        }
       })
       .addCase(fetchSingleProduct.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         state.productDetails = null;
+      })
+
+      // Post Review
+      .addCase(postReview.pending, (state) => {
+        state.isPostingReview = true;
+        state.error = null;
+      })
+      .addCase(postReview.fulfilled, (state, action) => {
+        state.isPostingReview = false;
+        // Update product details with new review info
+        if (state.productDetails && state.productDetails.id === action.payload.product.id) {
+          state.productDetails.ratings = action.payload.product.ratings;
+          // Optimistically add the new review or replace if it exists
+          const review = action.payload.review;
+          // Since backend returns reviews as part of product, we might need a better way, 
+          // but for now we can rely on re-fetching or manual update if structure matches.
+          // The best way is to re-fetch the single product to get the full updated list including the new one.
+        }
+      })
+      .addCase(postReview.rejected, (state, action) => {
+        state.isPostingReview = false;
+        state.error = action.payload;
       });
   },
 });
