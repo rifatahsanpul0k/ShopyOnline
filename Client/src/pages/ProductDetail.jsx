@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Minus, Plus, Star, Check, ChevronRight } from "lucide-react"; // Added Icons
 import { formatPrice } from "../utils/currencyFormatter";
@@ -7,6 +7,8 @@ import {
   fetchSingleProduct,
   clearProductDetails,
 } from "../store/slices/productSlice";
+import { addToCart } from "../store/slices/cartSlice";
+import { toast } from "react-toastify";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -74,12 +76,23 @@ const ProductDetail = () => {
   // Price Logic - Parse string to number
   const displayPrice = parseFloat(product.price || 0);
 
+
+
+  // ... existing imports
+
   const handleAddToCart = () => {
-    console.log("Add to cart:", {
-      product,
-      quantity,
-    });
-    alert("Product added to cart!");
+    dispatch(
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: parseFloat(product.price),
+        quantity: quantity,
+        image: mainImage,
+        category: product.category,
+        stock: product.stock,
+      })
+    );
+    toast.success("Added to cart!");
   };
 
   return (
@@ -90,19 +103,19 @@ const ProductDetail = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {/* Breadcrumbs */}
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-          <span
-            className="cursor-pointer hover:text-black"
-            onClick={() => navigate("/")}
+          <Link
+            to="/"
+            className="cursor-pointer hover:text-black transition"
           >
             Home
-          </span>
+          </Link>
           <ChevronRight size={16} />
-          <span
-            className="cursor-pointer hover:text-black"
-            onClick={() => navigate("/products")}
+          <Link
+            to="/products"
+            className="cursor-pointer hover:text-black transition"
           >
             Shop
-          </span>
+          </Link>
           <ChevronRight size={16} />
           <span className="text-black font-medium truncate">
             {product.name}
@@ -121,8 +134,8 @@ const ProductDetail = () => {
                     key={idx}
                     onClick={() => setSelectedImage(img.url)}
                     className={`border rounded-[20px] overflow-hidden bg-[#F0EEED] h-32 w-full lg:h-40 flex items-center justify-center ${selectedImage === img.url
-                        ? "border-black"
-                        : "border-transparent"
+                      ? "border-black"
+                      : "border-transparent"
                       }`}
                   >
                     <img

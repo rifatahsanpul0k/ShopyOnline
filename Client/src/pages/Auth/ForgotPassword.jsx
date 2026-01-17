@@ -14,7 +14,8 @@ const ForgotPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await dispatch(forgotPassword(email));
-    if (result.payload) {
+    // Check if the request was fulfilled (successful)
+    if (result.meta.requestStatus === 'fulfilled') {
       setSubmitted(true);
     }
   };

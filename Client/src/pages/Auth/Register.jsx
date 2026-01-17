@@ -5,6 +5,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { registerUser } from "../../store/slices/authSlice";
 import Button from "../../components/ui/Button";
 
+import { toast } from "react-toastify";
+import { ROLE_ADMIN } from "../../constants/roles";
+import { ADMIN_DASHBOARD_ROUTE, HOME_ROUTE, LOGIN_ROUTE } from "../../constants/routes";
+
 const Register = () => {
   const [formData, setFormData] = useState({
     name: "",
@@ -20,6 +24,12 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (formData.password.length < 8 || formData.password.length > 16) {
+      toast.error("Password must be between 8 and 16 characters");
       return;
     }
 
@@ -32,12 +42,18 @@ const Register = () => {
     );
 
     if (result.payload?.user) {
+      // Admin Redirection check
+      if (result.payload.user.role === ROLE_ADMIN) {
+        navigate(ADMIN_DASHBOARD_ROUTE);
+        return;
+      }
+
       // Check if there's a redirect parameter
       const redirectTo = searchParams.get("redirect");
       if (redirectTo) {
         navigate(redirectTo);
       } else {
-        navigate("/");
+        navigate(HOME_ROUTE);
       }
     }
   };
@@ -53,11 +69,10 @@ const Register = () => {
           <p className="text-gray-600">
             Already have an account?{" "}
             <Link
-              to={`/auth/login${
-                searchParams.get("redirect")
+              to={`${LOGIN_ROUTE}${searchParams.get("redirect")
                   ? `?redirect=${searchParams.get("redirect")}`
                   : ""
-              }`}
+                }`}
               className="text-black font-medium hover:opacity-70 transition-opacity"
             >
               Sign In

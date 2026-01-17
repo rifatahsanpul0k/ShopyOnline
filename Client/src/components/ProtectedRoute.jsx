@@ -1,5 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { ROLE_ADMIN } from "../constants/roles";
+import { ADMIN_DASHBOARD_ROUTE, HOME_ROUTE, LOGIN_ROUTE } from "../constants/routes";
 
 // Admin Protected Route - Only admins can access
 export const AdminProtectedRoute = ({ children }) => {
@@ -16,16 +18,16 @@ export const AdminProtectedRoute = ({ children }) => {
 
     // Check if user is authenticated and is admin
     if (!authUser) {
-        return <Navigate to="/auth/login?redirect=/admin/dashboard" replace />;
+        return <Navigate to={`${LOGIN_ROUTE}?redirect=${ADMIN_DASHBOARD_ROUTE}`} replace />;
     }
 
-    if (authUser.role !== "Admin") {
+    if (authUser.role !== ROLE_ADMIN) {
         return (
             <div className="flex items-center justify-center h-screen">
                 <div className="text-center">
                     <h1 className="text-4xl font-black mb-4">Access Denied</h1>
                     <p className="text-gray-600 mb-6">You don't have permission to access this page.</p>
-                    <a href="/" className="bg-black text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800">
+                    <a href={HOME_ROUTE} className="bg-black text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800">
                         Go to Home
                     </a>
                 </div>
@@ -49,11 +51,6 @@ export const UserProtectedRoute = ({ children }) => {
         );
     }
 
-    // If user is an admin, redirect to admin dashboard
-    if (authUser && authUser.role === "Admin") {
-        return <Navigate to="/admin/dashboard" replace />;
-    }
-
     return children;
 };
 
@@ -70,12 +67,12 @@ export const AuthProtectedRoute = ({ children }) => {
     }
 
     if (!authUser) {
-        return <Navigate to="/auth/login" replace />;
+        return <Navigate to={LOGIN_ROUTE} replace />;
     }
 
     // If admin tries to access, redirect to admin dashboard
-    if (authUser.role === "Admin") {
-        return <Navigate to="/admin/dashboard" replace />;
+    if (authUser.role === ROLE_ADMIN) {
+        return <Navigate to={ADMIN_DASHBOARD_ROUTE} replace />;
     }
 
     return children;

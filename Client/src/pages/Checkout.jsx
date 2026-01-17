@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { ChevronLeft, Lock, Check, AlertCircle } from "lucide-react";
+import { ChevronLeft, Lock, Check, AlertCircle, ChevronRight } from "lucide-react";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
 import { createOrderAPI } from "../services/ordersService";
@@ -223,14 +223,18 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-white py-12 px-4">
       <div className="max-w-[1440px] mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={handleBackStep}
-          className="flex items-center gap-2 text-black hover:opacity-70 transition mb-8"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Back
-        </button>
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
+          <Link to="/" className="hover:text-black transition">
+            Home
+          </Link>
+          <ChevronRight size={16} />
+          <Link to="/cart" className="hover:text-black transition">
+            Cart
+          </Link>
+          <ChevronRight size={16} />
+          <span className="text-black font-medium">Checkout</span>
+        </div>
 
         {/* Progress Indicator */}
         <div className="flex items-center justify-center gap-4 mb-12">
@@ -238,10 +242,10 @@ const Checkout = () => {
             <div key={step} className="flex items-center gap-4">
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${step < formStep
-                    ? "bg-black text-white"
-                    : step === formStep
-                      ? "bg-black text-white ring-4 ring-black ring-offset-2"
-                      : "bg-gray-200 text-gray-600"
+                  ? "bg-black text-white"
+                  : step === formStep
+                    ? "bg-black text-white ring-4 ring-black ring-offset-2"
+                    : "bg-gray-200 text-gray-600"
                   }`}
               >
                 {step < formStep ? <Check className="w-5 h-5" /> : step}

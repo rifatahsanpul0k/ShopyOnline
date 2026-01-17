@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { formatPrice } from "../utils/currencyFormatter";
 import { fetchAllProducts } from "../store/slices/productSlice";
+import { addToCart } from "../store/slices/cartSlice";
+import { toast } from "react-toastify";
 
 // Dynamic category filters based on category type
 const CATEGORY_FILTERS = {
@@ -85,19 +87,12 @@ const CATEGORY_FILTERS = {
       screen: ["6.1 inch", "6.5 inch", "6.7 inch", "6.8+ inch"],
     },
   },
-  accessories: {
+  watches: {
     name: "Watches",
-    subcategories: [
-      "Cables",
-      "Adapters",
-      "Cases",
-      "Bags",
-      "Stands",
-      "Chargers",
-    ],
+    subcategories: [],
     specs: {
-      brand: ["Anker", "Belkin", "Apple", "Samsung"],
-      type: ["USB-C", "HDMI", "DisplayPort", "Thunderbolt"],
+      brand: ["Apple", "Samsung", "Garmin", "Fossil", "Casio"],
+      type: ["Smartwatch", "Analog", "Digital", "Hybrid"],
     },
   },
 };
@@ -680,7 +675,26 @@ const Products = () => {
 
                         {/* Quick Add Button */}
                         {viewMode === "grid" && (
-                          <button className="absolute bottom-4 right-4 bg-black text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              dispatch(
+                                addToCart({
+                                  id: product.id,
+                                  name: product.name,
+                                  price: parseFloat(product.price),
+                                  quantity: 1,
+                                  image: productImage,
+                                  category: product.category,
+                                  stock: product.stock,
+                                })
+                              );
+                              toast.success("Added to cart!");
+                            }}
+                            className="absolute bottom-4 right-4 bg-black text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg"
+                            title="Add to Cart"
+                          >
                             <ShoppingBag className="w-5 h-5" />
                           </button>
                         )}
@@ -751,7 +765,25 @@ const Products = () => {
                             </div>
                           </div>
                           {viewMode === "list" && (
-                            <button className="bg-black text-white px-6 py-3 rounded-pill hover:bg-gray-800 transition font-bold uppercase tracking-wider flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                dispatch(
+                                  addToCart({
+                                    id: product.id,
+                                    name: product.name,
+                                    price: parseFloat(product.price),
+                                    quantity: 1,
+                                    image: productImage,
+                                    category: product.category,
+                                    stock: product.stock,
+                                  })
+                                );
+                                toast.success("Added to cart!");
+                              }}
+                              className="bg-black text-white px-6 py-3 rounded-pill hover:bg-gray-800 transition font-bold uppercase tracking-wider flex items-center gap-2"
+                            >
                               <ShoppingBag className="w-5 h-5" />
                               Add to Cart
                             </button>
