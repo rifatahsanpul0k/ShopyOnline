@@ -5,11 +5,11 @@ import {
   CardElement,
   useStripe,
   useElements,
-  PaymentElement,
 } from "@stripe/react-stripe-js";
 import { Lock, AlertCircle, Check, ArrowLeft, Loader } from "lucide-react";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
+import { createPaymentIntentAPI, updatePaymentStatusAPI } from "../services/paymentService";
 
 // Note: This component requires Stripe setup. See implementation notes below.
 
@@ -20,7 +20,7 @@ const Payment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [_clientSecret, setClientSecret] = useState(null);
+  const [clientSecret, setClientSecret] = useState(null);
 
   const paymentData = location.state;
 
@@ -34,16 +34,37 @@ const Payment = () => {
       return;
     }
 
-    // Simulate payment intent creation (in production, this would call your backend)
-    // Backend would create Stripe payment intent and return clientSecret
-    setClientSecret("pi_demo_" + Date.now());
+    // Create payment intent on mount
+    const initializePayment = async () => {
+      try {
+        console.log("Initializing payment with data:", paymentData);
+        const response = await createPaymentIntentAPI(
+          paymentData.orderId,
+          paymentData.orderSummary.total
+        );
+
+        console.log("Payment initialization response:", response);
+
+        if (response.success) {
+          setClientSecret(response.clientSecret);
+        } else {
+          console.error("Payment initialization failed:", response);
+          setError(response.message || "Failed to initialize payment");
+        }
+      } catch (err) {
+        console.error("Payment initialization error:", err);
+        setError(err.message || "Failed to initialize payment");
+      }
+    };
+
+    initializePayment();
   }, [paymentData, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
-      setError("Payment system not initialized");
+    if (!stripe || !elements || !clientSecret) {
+      setError("Payment system not ready");
       return;
     }
 
@@ -51,19 +72,46 @@ const Payment = () => {
     setError(null);
 
     try {
-      // DEMO MODE: Simulated payment processing
-      // In production with Stripe:
-      // 1. Call stripe.confirmCardPayment(clientSecret, { payment_method: {...} })
-      // 2. Backend validates payment with Stripe
-      // 3. Update order payment status in database
-      // 4. Return success response
+      const cardElement = elements.getElement(CardElement);
 
-      // Simulate payment processing delay
-      setTimeout(() => {
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: paymentData.shippingInfo.fullName,
+              email: paymentData.shippingInfo.email,
+              address: {
+                line1: paymentData.shippingInfo.address,
+                city: paymentData.shippingInfo.city,
+                state: paymentData.shippingInfo.state,
+                postal_code: paymentData.shippingInfo.zipCode,
+              },
+            },
+          },
+        }
+      );
+
+      if (stripeError) {
+        setError(stripeError.message);
+        setIsProcessing(false);
+      } else if (paymentIntent && paymentIntent.status === "succeeded") {
+        console.log("Payment succeeded:", paymentIntent);
+
+        // Update payment status in database (non-blocking)
+        try {
+          await updatePaymentStatusAPI(paymentData.orderId, "Paid");
+          console.log("Database updated successfully");
+        } catch (dbError) {
+          console.error("Failed to update database but payment succeeded:", dbError);
+          // We intentionally ignore this error for the UI flow because the payment WAS successful
+        }
+
         setSuccess(true);
         setIsProcessing(false);
 
-        // Redirect to success page after brief delay
+        // Redirect to success page
         setTimeout(() => {
           navigate("/payment/success", {
             state: {
@@ -72,35 +120,9 @@ const Payment = () => {
             },
           });
         }, 2000);
-      }, 1500);
-
-      // Production Stripe implementation would look like:
-      // const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
-      //   payment_method: {
-      //     card: elements.getElement(CardElement),
-      //     billing_details: {
-      //       name: paymentData.shippingInfo.fullName,
-      //       email: paymentData.shippingInfo.email,
-      //     },
-      //   },
-      // });
-
-      // if (error) {
-      //   setError(error.message);
-      //   setIsProcessing(false);
-      // } else if (paymentIntent && paymentIntent.status === "succeeded") {
-      //   setSuccess(true);
-      //   setIsProcessing(false);
-      //   setTimeout(() => {
-      //     navigate("/payment/success", {
-      //       state: {
-      //         orderId: paymentIntent.id,
-      //         amount: paymentData.orderSummary.total,
-      //       },
-      //     });
-      //   }, 2000);
-      // }
+      }
     } catch (err) {
+      console.error("Payment error:", err);
       setError(err.message || "Payment failed. Please try again.");
       setIsProcessing(false);
     }
@@ -241,9 +263,11 @@ const Payment = () => {
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-card p-4 flex gap-3">
                     <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                    <div>
+                    <div className="overflow-hidden">
                       <p className="font-medium text-red-900">Payment Failed</p>
-                      <p className="text-sm text-red-800">{error}</p>
+                      <p className="text-sm text-red-800 whitespace-pre-wrap break-words">
+                        {typeof error === 'object' ? JSON.stringify(error, null, 2) : error}
+                      </p>
                     </div>
                   </div>
                 )}

@@ -193,23 +193,52 @@ const Orders = () => {
         setLoading(true);
         const data = await getUserOrdersAPI();
 
-        // Transform API response to match frontend format
-        const transformedOrders = (data.orders || []).map((order) => ({
-          id: order.id,
-          date: order.date,
-          total: order.total,
-          status: order.status?.toLowerCase() || "processing",
-          items: Array.isArray(order.items) ? order.items : [],
-          shippingInfo: order.shippingInfo || {},
-        }));
+        console.log("Orders response:", data);
 
-        setOrders(
-          transformedOrders.length > 0 ? transformedOrders : DUMMY_ORDERS
-        );
+        // Backend returns 'myOrders' field
+        const ordersData = data.myOrders || [];
+
+        // Transform API response to match frontend format
+        const transformedOrders = ordersData.map((order) => {
+          // Parse order_items which is JSON string from backend
+          const orderItems = typeof order.order_items === 'string'
+            ? JSON.parse(order.order_items)
+            : (order.order_items || []);
+
+          // Parse shipping_info which is JSON object
+          const shippingInfo = typeof order.shipping_info === 'string'
+            ? JSON.parse(order.shipping_info)
+            : (order.shipping_info || {});
+
+          return {
+            id: order.id,
+            date: order.created_at || order.date,
+            total: parseFloat(order.total_price || 0),
+            status: (order.order_status || 'processing').toLowerCase(),
+            items: orderItems.map(item => ({
+              id: item.product_id,
+              name: item.title || 'Product',
+              price: parseFloat(item.price || 0),
+              quantity: parseInt(item.quantity || 1),
+              image: item.image
+            })),
+            shippingInfo: {
+              fullName: shippingInfo.full_name,
+              email: authUser?.email,
+              phone: shippingInfo.phone,
+              address: shippingInfo.address,
+              city: shippingInfo.city,
+              state: shippingInfo.state,
+              country: shippingInfo.country,
+              pincode: shippingInfo.pincode
+            }
+          };
+        });
+
+        setOrders(transformedOrders);
       } catch (err) {
         console.error("Error fetching orders:", err);
-        // Use dummy data as fallback
-        setOrders(DUMMY_ORDERS);
+        setOrders([]);
       } finally {
         setLoading(false);
       }
@@ -360,8 +389,8 @@ const Orders = () => {
                 key={filter.value}
                 onClick={() => setFilterStatus(filter.value)}
                 className={`px-6 py-3 rounded-pill font-medium transition ${filterStatus === filter.value
-                    ? "bg-black text-white"
-                    : "bg-gray-100 text-black hover:bg-gray-200"
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-black hover:bg-gray-200"
                   }`}
               >
                 {filter.label}
@@ -546,8 +575,8 @@ const Orders = () => {
                       <div className="flex flex-col items-center">
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition ${item.completed
-                              ? "bg-black text-white"
-                              : "bg-gray-200 text-gray-600"
+                            ? "bg-black text-white"
+                            : "bg-gray-200 text-gray-600"
                             }`}
                         >
                           {item.completed ? "✓" : idx + 1}

@@ -145,41 +145,38 @@ const Checkout = () => {
       try {
         // Prepare order data for backend
         const orderData = {
-          orderItems: orderSummary.items.map(item => ({
-            product_id: item.id,
+          full_name: shippingInfo.fullName,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          state: shippingInfo.state,
+          pincode: shippingInfo.zipCode,
+          country: shippingInfo.country,
+          phone: shippingInfo.phone,
+          orderedItems: orderSummary.items.map(item => ({
+            product: {
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              images: [{ url: item.image }],
+            },
             quantity: item.quantity,
-            price: item.price,
           })),
-          shippingInfo: {
-            address: shippingInfo.address,
-            city: shippingInfo.city,
-            state: shippingInfo.state,
-            zip_code: shippingInfo.zipCode,
-            country: shippingInfo.country,
-            phone_number: shippingInfo.phone,
-          },
-          itemsPrice: orderSummary.subtotal,
-          taxPrice: orderSummary.tax,
-          shippingPrice: orderSummary.shipping,
-          totalPrice: orderSummary.total,
-          paymentInfo: {
-            status: "Pending", // Will be updated after payment
-          },
         };
 
         // Create order via API
         const response = await createOrderAPI(orderData);
 
         if (response.success) {
-          toast.success("Order created successfully!");
+          toast.success("Order initiated! Proceeding to payment...");
 
           // Clear cart after successful order creation
-          dispatch(clearCart());
+          // Cart cleared on payment success
+          // dispatch(clearCart());
 
           // Redirect to payment page with real order ID
           navigate("/payment", {
             state: {
-              orderId: response.order.id,
+              orderId: response.orderId,
               shippingInfo,
               billingInfo,
               orderSummary,

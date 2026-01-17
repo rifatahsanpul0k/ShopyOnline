@@ -142,6 +142,7 @@ export const placeNewOrder = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Order placed successfully. Please proceed to payment.",
+    orderId,
     paymentIntent: paymentResponse.clientSecret,
     total_price,
   });
