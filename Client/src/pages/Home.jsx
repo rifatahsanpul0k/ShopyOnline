@@ -13,7 +13,10 @@ import {
   RotateCcw,
   ShieldCheck,
   ShoppingBag,
+  ArrowRight,
+  Clock,
 } from "lucide-react";
+import StockBadge from "../components/ui/StockBadge";
 
 // Hero Slider Data
 const HERO_SLIDES = [
@@ -128,7 +131,7 @@ const CATEGORIES = [
 const Home = () => {
   const dispatch = useDispatch();
   const { authUser } = useSelector((state) => state.auth);
-  const { newProducts, topRatedProducts, loading } = useSelector(
+  const { newProducts, topRatedProducts, loading, totalProducts } = useSelector(
     (state) => state.product
   );
   const navigate = useNavigate();
@@ -298,14 +301,8 @@ const Home = () => {
                 {/* Stats */}
                 <div className="flex items-center gap-12 pt-8 border-t-2 border-black/10">
                   <div>
-                    <h3 className="text-5xl font-black text-black mb-1">10+</h3>
-                    <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
-                      Brands
-                    </p>
-                  </div>
-                  <div>
                     <h3 className="text-5xl font-black text-black mb-1">
-                      100+
+                      {totalProducts || 0}
                     </h3>
                     <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
                       Products
@@ -372,7 +369,7 @@ const Home = () => {
                 <img
                   src={HERO_SLIDES[currentSlide].image}
                   alt="Featured Tech"
-                  className="relative w-full h-auto object-contain grayscale group-hover:grayscale-0 transition-all duration-700 transform group-hover:scale-105 z-10"
+                  className="relative w-full h-auto object-contain transition-all duration-700 transform group-hover:scale-105 z-10"
                 />
 
                 {/* Badge */}
@@ -437,7 +434,7 @@ const Home = () => {
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="w-full h-full object-cover grayscale opacity-50 group-hover:scale-105 group-hover:opacity-100 transition duration-700"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-transparent transition">
                   <h3 className="text-3xl font-black uppercase tracking-tighter">
@@ -517,12 +514,14 @@ const Home = () => {
                     className="group border-b-2 border-transparent hover:border-black transition-all pb-6 flex-shrink-0"
                     style={{ width: "calc(25% - 30px)" }}
                   >
-                    <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
+                    <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4 relative">
                       <img
                         src={productImage}
                         alt={product.name}
-                        className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                        className={`w-full h-full object-contain transition-all duration-500 ${product.stock === 0 ? "grayscale" : ""
+                          }`}
                       />
+                      <StockBadge stock={product.stock || 0} />
                     </div>
                     <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight line-clamp-2">
                       {product.name}
@@ -530,9 +529,6 @@ const Home = () => {
                     <div className="space-y-1 mb-4">
                       <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
                         — {product.category}
-                      </p>
-                      <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
-                        — Stock: {product.stock}
                       </p>
                     </div>
                     {/* Rating Stars */}
@@ -646,7 +642,8 @@ const Home = () => {
                       <img
                         src={productImage}
                         alt={product.name}
-                        className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                        className={`w-full h-full object-contain transition-all duration-500 ${product.stock === 0 ? "grayscale" : ""
+                          }`}
                       />
                     </div>
                     <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight line-clamp-2">
