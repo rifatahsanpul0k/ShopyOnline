@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   ChevronRight,
   Package,
@@ -339,14 +339,18 @@ const Orders = () => {
       {/* Header */}
       <section className="py-16 px-6 lg:px-12 bg-gradient-to-r from-black to-gray-900 text-white">
         <div className="max-w-[1440px] mx-auto">
-          {/* Back Button */}
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-white/80 hover:text-white transition mb-6 font-medium"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back
-          </button>
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center gap-2 text-sm text-white/60 mb-6">
+            <Link to="/" className="hover:text-white transition">
+              Home
+            </Link>
+            <ChevronRight className="w-4 h-4" />
+            <Link to="/profile" className="hover:text-white transition">
+              Profile
+            </Link>
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-white font-medium">My Orders</span>
+          </div>
 
           <h1 className="text-5xl lg:text-6xl font-heading font-bold mb-2">
             My Orders

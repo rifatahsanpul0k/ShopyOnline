@@ -148,14 +148,22 @@ const Payment = () => {
   return (
     <div className="min-h-screen bg-white py-12 px-4">
       <div className="max-w-[1440px] mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate("/checkout")}
-          className="flex items-center gap-2 text-black hover:opacity-70 transition mb-8"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Checkout
-        </button>
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
+          <Link to="/" className="hover:text-black transition">
+            Home
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <Link to="/cart" className="hover:text-black transition">
+            Cart
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <Link to="/checkout" className="hover:text-black transition">
+            Checkout
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-black font-medium">Payment</span>
+        </div>
 
         {/* Page Title */}
         <h1 className="text-5xl font-heading font-bold text-black mb-12">
