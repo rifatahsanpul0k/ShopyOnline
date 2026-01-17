@@ -37,3 +37,24 @@ export const formatNumber = (num) => {
   }
   return num.toString();
 };
+
+/**
+ * Format date to readable string
+ * @param {string|Date} date - Date to format
+ * @returns {string} Formatted date string
+ */
+export const formatDate = (date) => {
+  if (!date) return "N/A";
+
+  const dateObj = new Date(date);
+
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) return "Invalid Date";
+
+  // Format: Jan 15, 2026
+  return dateObj.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+};

@@ -13,8 +13,8 @@ const orderSlice = createSlice({
     paymentIntent: "",
   },
   reducers: {},
-  extraReducers: (builder) => {},
+  extraReducers: (builder) => { },
 });
 
 export default orderSlice.reducer;
-export const {} = orderSlice.actions;
+export const { } = orderSlice.actions;
