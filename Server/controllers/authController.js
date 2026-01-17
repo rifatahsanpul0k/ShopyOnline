@@ -8,6 +8,7 @@ import { generateEmailTemplate } from "../utils/generateForgotPasswordEmailTempl
 import { generateResetPasswordToken } from "../utils/generateResetPasswordToken.js";
 import { sendToken } from "../utils/jwtToken.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import { createNotification } from "./notificationController.js";
 
 // Register a user-------------->
 export const register = catchAsyncErrors(async (req, res, next) => {
@@ -37,6 +38,16 @@ export const register = catchAsyncErrors(async (req, res, next) => {
         "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
         [name, email, hashedPassword]
     );
+
+    // Create notification for new user registration
+    await createNotification(
+        "user_registration",
+        "New User Registered",
+        `${name} has registered with email: ${email}`,
+        user.rows[0].id,
+        "user"
+    );
+
     sendToken(user.rows[0], 201, "User registered successfully", res);
 });
 

@@ -14,7 +14,8 @@ import {
     MapPin,
     ChevronDown,
     X,
-    ArrowUpRight
+    ArrowUpRight,
+    Package,
 } from "lucide-react";
 import { fetchAllOrders, updateOrderStatus } from "../../services/ordersAdminService";
 import { formatPrice } from "../../utils/currencyFormatter";
@@ -65,6 +66,111 @@ const AdminOrders = () => {
             toast.error("Failed to update status");
         } finally {
             setUpdatingStatus(false);
+        }
+    };
+
+    const handleDownloadInvoice = async (order) => {
+        try {
+            // Load jsPDF library
+            const jsPDFScript = document.createElement('script');
+            jsPDFScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
+            jsPDFScript.onload = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                let yPosition = 20;
+
+                // Header
+                doc.setFillColor(0, 0, 0);
+                doc.rect(0, 0, pageWidth, 25, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(20);
+                doc.setFont('helvetica', 'bold');
+                doc.text('SHOPY ONLINE', pageWidth / 2, 10, { align: 'center' });
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Invoice', pageWidth / 2, 18, { align: 'center' });
+
+                yPosition = 35;
+
+                // Invoice Details
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text('INVOICE', 20, yPosition);
+                yPosition += 8;
+
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Order ID: ${order.id.slice(0, 8).toUpperCase()}`, 20, yPosition);
+                yPosition += 6;
+                doc.text(`Date: ${formatDate(order.created_at)}`, 20, yPosition);
+                yPosition += 8;
+
+                // Customer Info
+                doc.setFont('helvetica', 'bold');
+                doc.text('CUSTOMER', 20, yPosition);
+                yPosition += 6;
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Name: ${order.user_name}`, 20, yPosition);
+                yPosition += 5;
+                doc.text(`Email: ${order.user_email}`, 20, yPosition);
+                yPosition += 10;
+
+                // Order Summary Table
+                doc.setFont('helvetica', 'bold');
+                doc.setFillColor(240, 240, 240);
+                doc.rect(20, yPosition, 170, 7, 'F');
+                doc.text('Description', 25, yPosition + 5);
+                doc.text('Amount', 150, yPosition + 5);
+                yPosition += 12;
+
+                doc.setFont('helvetica', 'normal');
+                doc.text('Order Items', 25, yPosition);
+                doc.text(`${formatPrice(order.items_price || 0)}`, 150, yPosition);
+                yPosition += 6;
+
+                doc.text('Tax (18%)', 25, yPosition);
+                doc.text(`${formatPrice(order.tax_price || 0)}`, 150, yPosition);
+                yPosition += 6;
+
+                doc.text('Shipping', 25, yPosition);
+                doc.text(`${formatPrice(order.shipping_price || 0)}`, 150, yPosition);
+                yPosition += 8;
+
+                doc.setFillColor(0, 0, 0);
+                doc.rect(20, yPosition, 170, 8, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.text('TOTAL', 25, yPosition + 5);
+                doc.text(`${formatPrice(order.total_price)}`, 150, yPosition + 5);
+
+                yPosition += 15;
+
+                // Payment Status
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PAYMENT STATUS', 20, yPosition);
+                yPosition += 6;
+                doc.setFont('helvetica', 'normal');
+                doc.text(order.paid_at ? `Paid on ${formatDate(order.paid_at)}` : 'Pending', 20, yPosition);
+
+                // Save PDF
+                doc.save(`Invoice-${order.id.slice(0, 8)}.pdf`);
+                toast.success('Invoice downloaded successfully!');
+            };
+
+            document.head.appendChild(jsPDFScript);
+        } catch (error) {
+            console.error('Error downloading invoice:', error);
+            toast.error('Failed to download invoice');
         }
     };
 
@@ -359,7 +465,10 @@ const AdminOrders = () => {
                             >
                                 Close
                             </button>
-                            <button className="px-6 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors flex items-center gap-2">
+                            <button
+                                onClick={() => handleDownloadInvoice(selectedOrder)}
+                                className="px-6 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors flex items-center gap-2"
+                            >
                                 Download Invoice <ArrowUpRight size={16} />
                             </button>
                         </div>

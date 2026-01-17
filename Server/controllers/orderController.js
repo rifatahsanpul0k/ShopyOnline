@@ -2,6 +2,7 @@ import ErrorHandler from "../middlewares/errorMiddleware.js";
 import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import database from "../database/db.js";
 import { generatePaymentIntent } from "../utils/generatePaymentIntent.js";
+import { createNotification } from "./notificationController.js";
 
 
 // Place a new order------->
@@ -138,6 +139,15 @@ export const placeNewOrder = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Payment failed. Try again.", 500));
   }
 
+  // Create notification for payment placed
+  await createNotification(
+    "payment_placed",
+    "New Payment Received",
+    `Payment of $${total_price.toFixed(2)} has been placed for order ${orderId.slice(0, 8)}...`,
+    orderId,
+    "order"
+  );
+
   // Send response
   res.status(200).json({
     success: true,
@@ -247,6 +257,8 @@ export const fetchAllOrders = catchAsyncErrors(async (req, res, next) => {
   const result = await database.query(
     `
     SELECT o.*,
+    u.name as user_name,
+    u.email as user_email,
     COALESCE(json_agg(
     json_build_object(
     'order_item_id', oi.id,
@@ -267,9 +279,11 @@ export const fetchAllOrders = catchAsyncErrors(async (req, res, next) => {
     'phone', s.phone 
     ) AS shipping_info
     FROM orders o
+    LEFT JOIN users u ON o.buyer_id = u.id
     LEFT JOIN order_items oi ON o.id = oi.order_id
     LEFT JOIN shipping_info s ON o.id = s.order_id
-    GROUP BY o.id, s.id
+    GROUP BY o.id, s.id, u.id
+    ORDER BY o.created_at DESC
     `
   );
 
@@ -284,10 +298,10 @@ export const fetchAllOrders = catchAsyncErrors(async (req, res, next) => {
 
 // Admin: Update order status------->
 export const updateOrderStatus = catchAsyncErrors(async (req, res, next) => {
-  const { status } = req.body;
+  const { order_status } = req.body;
 
   // Validate status
-  if (!status) {
+  if (!order_status) {
     return next(new ErrorHandler("Provide a valid status for order.", 400));
   }
 
@@ -302,7 +316,7 @@ export const updateOrderStatus = catchAsyncErrors(async (req, res, next) => {
   }
 
   // Update order status
-  const updatedOrder = await database.query(`UPDATE orders SET order_status = $1 WHERE id = $2 RETURNING *`, [status, orderId]);
+  const updatedOrder = await database.query(`UPDATE orders SET order_status = $1 WHERE id = $2 RETURNING *`, [order_status, orderId]);
 
   // Send response
   res.status(200).json({

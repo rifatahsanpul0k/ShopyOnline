@@ -10,6 +10,7 @@ import authRouter from "./router/authRoutes.js";
 import orderRouter from "./router/orderRoutes.js";
 import paymentRouter from "./router/paymentRoutes.js";
 import productRouter from "./router/productRoutes.js";
+import notificationRouter from "./router/notificationRoutes.js";
 import { createTables } from "./utils/createTables.js";
 
 const app = express();
@@ -82,6 +83,7 @@ app.use("/api/v1/product", productRouter);
 app.use("/api/v1/order", orderRouter);
 app.use("/api/v1/payment", paymentRouter);
 app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
 createTables();
 
