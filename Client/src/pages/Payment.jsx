@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   CardElement,
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { Lock, AlertCircle, Check, ArrowLeft, Loader } from "lucide-react";
+import { Lock, AlertCircle, Check, ArrowLeft, Loader, ChevronRight } from "lucide-react";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
 import { createPaymentIntentAPI, updatePaymentStatusAPI } from "../services/paymentService";

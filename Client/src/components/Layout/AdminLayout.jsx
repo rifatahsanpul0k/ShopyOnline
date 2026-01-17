@@ -72,8 +72,16 @@ const AdminLayout = () => {
                         {/* User Info */}
                         <div className="p-6 border-b border-white/10">
                             <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                                    <UserCircle className="w-6 h-6" />
+                                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                                    {authUser?.avatar?.url ? (
+                                        <img
+                                            src={authUser.avatar.url}
+                                            alt={authUser.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <UserCircle className="w-6 h-6" />
+                                    )}
                                 </div>
                                 <div>
                                     <p className="font-bold text-sm">{authUser?.name || "Admin"}</p>
@@ -93,8 +101,8 @@ const AdminLayout = () => {
                                         to={item.href}
                                         onClick={() => setSidebarOpen(false)}
                                         className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${isActive
-                                                ? "bg-white text-black font-bold"
-                                                : "text-white/70 hover:bg-white/10 hover:text-white"
+                                            ? "bg-white text-black font-bold"
+                                            : "text-white/70 hover:bg-white/10 hover:text-white"
                                             }`}
                                     >
                                         <Icon className="w-5 h-5" />
@@ -123,45 +131,21 @@ const AdminLayout = () => {
                     <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
                         <div className="px-4 lg:px-8 py-4">
                             <div className="flex items-center justify-between">
-                                {/* Mobile Menu Button */}
-                                <button
-                                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                                    className="lg:hidden text-black hover:text-gray-600 mr-3"
-                                >
-                                    <Menu className="w-6 h-6" />
-                                </button>
-
-                                {/* Logo/Brand - Mobile */}
-                                <h1 className="lg:hidden font-black text-xl tracking-tight">SHOPY ADMIN</h1>
-
-                                {/* Search Bar - Desktop Only */}
-                                <div className="hidden lg:flex items-center flex-1 max-w-xl">
-                                    <div className="relative w-full">
-                                        <input
-                                            type="text"
-                                            placeholder="Search products, orders, users..."
-                                            className="w-full px-4 py-2 pl-10 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                                        />
-                                        <svg
-                                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                            />
-                                        </svg>
-                                    </div>
+                                {/* Mobile Menu Button & Logo */}
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                                        className="lg:hidden text-black hover:text-gray-600"
+                                    >
+                                        <Menu className="w-6 h-6" />
+                                    </button>
+                                    <h1 className="lg:hidden font-black text-xl tracking-tight">SHOPY ADMIN</h1>
                                 </div>
 
-                                {/* Admin Profile Section */}
+                                {/* Notification & Admin Profile - Top Right */}
                                 <div className="flex items-center gap-4">
-                                    {/* Notification Bell - Desktop */}
-                                    <button className="hidden lg:block relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                    {/* Notification Bell */}
+                                    <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path
                                                 strokeLinecap="round"
@@ -174,14 +158,24 @@ const AdminLayout = () => {
                                     </button>
 
                                     {/* Admin Avatar & Info */}
-                                    <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
+                                    <div
+                                        className="flex items-center gap-3 pl-3 border-l border-gray-200"
+                                    >
                                         <div className="hidden md:block text-right">
                                             <p className="font-bold text-sm text-gray-900">{authUser?.name || "Admin"}</p>
                                             <p className="text-xs text-gray-500 uppercase font-semibold">{authUser?.role || "Administrator"}</p>
                                         </div>
-                                        <div className="w-10 h-10 bg-gradient-to-br from-black to-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                            {authUser?.name?.charAt(0).toUpperCase() || "A"}
-                                        </div>
+                                        {authUser?.avatar?.url ? (
+                                            <img
+                                                src={authUser.avatar.url}
+                                                alt={authUser.name}
+                                                className="w-10 h-10 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 bg-gradient-to-br from-black to-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                                {authUser?.name?.charAt(0).toUpperCase() || "A"}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
