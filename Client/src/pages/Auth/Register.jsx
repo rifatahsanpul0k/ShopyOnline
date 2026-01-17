@@ -42,18 +42,12 @@ const Register = () => {
     );
 
     if (result.payload?.user) {
-      // Admin Redirection check
-      if (result.payload.user.role === ROLE_ADMIN) {
-        navigate(ADMIN_DASHBOARD_ROUTE);
-        return;
-      }
-
-      // Check if there's a redirect parameter
+      // Check if there's a redirect parameter to pass to login
       const redirectTo = searchParams.get("redirect");
       if (redirectTo) {
-        navigate(redirectTo);
+        navigate(`${LOGIN_ROUTE}?redirect=${redirectTo}`);
       } else {
-        navigate(HOME_ROUTE);
+        navigate(LOGIN_ROUTE);
       }
     }
   };
@@ -70,8 +64,8 @@ const Register = () => {
             Already have an account?{" "}
             <Link
               to={`${LOGIN_ROUTE}${searchParams.get("redirect")
-                  ? `?redirect=${searchParams.get("redirect")}`
-                  : ""
+                ? `?redirect=${searchParams.get("redirect")}`
+                : ""
                 }`}
               className="text-black font-medium hover:opacity-70 transition-opacity"
             >

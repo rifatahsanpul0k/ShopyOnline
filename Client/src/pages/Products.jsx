@@ -114,9 +114,10 @@ const Products = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
-  // Get category from URL params (optional now)
+  // Get category/sort URL params
   const categoryParam = searchParams.get("category")?.toLowerCase();
   const sortParam = searchParams.get("sort");
+
   const currentCategory = categoryParam
     ? CATEGORY_FILTERS[categoryParam] || CATEGORY_FILTERS.laptops
     : null;
@@ -139,7 +140,6 @@ const Products = () => {
 
   // 2. User Filters
   const [filters, setFilters] = useState({
-    search: searchParams.get("search") || "",
     category: categoryParam || "",
     subcategory: searchParams.get("subcategory") || "",
     minPrice: 0,
@@ -147,7 +147,7 @@ const Products = () => {
     sort: searchParams.get("sort") || "price-low",
     brands: [],
     specs: {},
-    inStock: false,
+    availability: "all",
     minRating: 0,
   });
 
@@ -168,7 +168,7 @@ const Products = () => {
       category: categoryParam,
       minPrice: 0,
       maxPrice: 5000,
-      search: "",
+      availability: "all",
     }));
   }, [categoryParam]);
 
@@ -200,7 +200,6 @@ const Products = () => {
   useEffect(() => {
     const params = {
       category: filters.category,
-      search: filters.search,
     };
 
     // Only send price param if it differs from the Global Bounds
@@ -220,19 +219,18 @@ const Products = () => {
     }
 
     // Add availability filter
-    if (filters.inStock) {
-      params.availability = "in-stock";
+    if (filters.availability && filters.availability !== "all") {
+      params.availability = filters.availability;
     }
 
     dispatch(fetchAllProducts(params));
   }, [
     dispatch,
     filters.category,
-    filters.search,
     filters.minPrice,
     filters.maxPrice,
     filters.minRating,
-    filters.inStock,
+    filters.availability,
     // Note: We purposefully omit sliderBounds from dependency array to prevent loops
     isBoundsInitialized,
   ]);
@@ -587,17 +585,27 @@ const Products = () => {
                   />
                 </button>
                 {expandedSections.availability && (
-                  <label className="flex items-center gap-3 px-2 py-2 hover:bg-white/50 rounded-lg cursor-pointer transition">
-                    <input
-                      type="checkbox"
-                      checked={filters.inStock}
-                      onChange={(e) =>
-                        setFilters({ ...filters, inStock: e.target.checked })
-                      }
-                      className="w-5 h-5 rounded border-2 border-black/20 accent-black cursor-pointer"
-                    />
-                    <span className="text-sm font-medium">In Stock Only</span>
-                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: "All", value: "all" },
+                      { label: "In Stock", value: "in-stock" },
+                      { label: "Limited", value: "limited" },
+                      { label: "Out of Stock", value: "out-of-stock" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() =>
+                          setFilters({ ...filters, availability: option.value })
+                        }
+                        className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-full border transition-all ${filters.availability === option.value
+                          ? "bg-black text-white border-black"
+                          : "bg-white text-black border-gray-200 hover:border-black"
+                          }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 

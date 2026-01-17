@@ -56,9 +56,10 @@ export const UserProtectedRoute = ({ children }) => {
 
 // Auth Protected Route - Any authenticated user can access
 export const AuthProtectedRoute = ({ children }) => {
-    const { authUser, loading } = useSelector((state) => state.auth);
+    const { authUser, isCheckingAuth } = useSelector((state) => state.auth);
 
-    if (loading) {
+    // Show loading while checking auth
+    if (isCheckingAuth) {
         return (
             <div className="flex items-center justify-center h-screen">
                 <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-black"></div>

@@ -411,7 +411,7 @@ const ProductDetail = () => {
       {/* Review Modal */}
       {showReviewModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-[20px] p-8 max-w-lg w-full relative animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-3xl p-8 max-w-lg w-full relative animate-in fade-in zoom-in duration-200">
             <button
               onClick={() => setShowReviewModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-black transition"
