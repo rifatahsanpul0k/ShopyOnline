@@ -13,10 +13,13 @@ import {
   X,
   Loader,
   ArrowLeft,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import Button from "../components/ui/Button";
-import { getUserOrdersAPI } from "../services/ordersService.js";
+import { getUserOrdersAPI, deleteOrderAPI } from "../services/ordersService.js";
 import { generateInvoicePDF } from "../utils/invoiceGenerator.js";
+import { toast } from "react-toastify";
 
 // Dummy data for development/testing
 const DUMMY_ORDERS = [
@@ -185,6 +188,8 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch orders from API
   useEffect(() => {
@@ -246,6 +251,10 @@ const Orders = () => {
 
     if (authUser) {
       fetchOrders();
+
+      // Auto-refresh orders every 30 seconds to check for status updates
+      const interval = setInterval(fetchOrders, 30000);
+      return () => clearInterval(interval);
     }
   }, [authUser]);
 
@@ -328,6 +337,26 @@ const Orders = () => {
   const handleCloseModal = () => {
     setIsDetailModalOpen(false);
     setTimeout(() => setSelectedOrder(null), 300);
+  };
+
+  // Handle delete order
+  const handleDeleteOrder = async (orderId) => {
+    try {
+      setDeleting(true);
+      await deleteOrderAPI(orderId);
+
+      // Remove from orders list
+      setOrders(orders.filter(order => order.id !== orderId));
+      setIsDetailModalOpen(false);
+      setShowDeleteConfirm(false);
+      setSelectedOrder(null);
+      toast.success("Order deleted successfully");
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      toast.error("Failed to delete order");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (!authUser) {
@@ -510,15 +539,6 @@ const Orders = () => {
                         <Eye className="w-4 h-4" />
                         View Details
                       </button>
-                      {order.status === "delivered" && (
-                        <button
-                          onClick={() => generateInvoicePDF(order, authUser)}
-                          className="flex items-center gap-2 px-4 py-3 border-2 border-black text-black font-medium rounded-pill hover:bg-gray-100 transition"
-                        >
-                          <Download className="w-4 h-4" />
-                          Invoice
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -685,16 +705,25 @@ const Orders = () => {
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 {selectedOrder.status === "delivered" && (
-                  <button
-                    onClick={() => {
-                      generateInvoicePDF(selectedOrder, authUser);
-                      handleCloseModal();
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-black text-black font-bold rounded-pill hover:bg-gray-100 transition"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download Invoice
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        generateInvoicePDF(selectedOrder, authUser);
+                        handleCloseModal();
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-black text-black font-bold rounded-pill hover:bg-gray-100 transition"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Invoice
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-red-500 text-red-500 font-bold rounded-pill hover:bg-red-50 transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Order
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={handleCloseModal}
@@ -703,6 +732,58 @@ const Orders = () => {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 overflow-hidden">
+            {/* Icon */}
+            <div className="pt-8 flex justify-center">
+              <div className="h-16 w-16 rounded-full bg-red-50 flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-8 text-center space-y-4">
+              <h3 className="text-2xl font-black text-black">
+                Delete Order?
+              </h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Are you sure you want to delete order <span className="font-bold text-black">#{selectedOrder?.id.slice(0, 8)}</span>? This action cannot be undone.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="px-8 pb-8 flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 px-6 py-3 font-bold text-gray-600 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteOrder(selectedOrder.id)}
+                disabled={deleting}
+                className="flex-1 px-6 py-3 font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

@@ -16,8 +16,11 @@ import {
     X,
     ArrowUpRight,
     Package,
+    Trash2,
+    AlertTriangle,
+    Loader,
 } from "lucide-react";
-import { fetchAllOrders, updateOrderStatus } from "../../services/ordersAdminService";
+import { fetchAllOrders, updateOrderStatus, deleteOrderAPI } from "../../services/ordersAdminService";
 import { formatPrice } from "../../utils/currencyFormatter";
 import { formatDate } from "../../utils/formatters";
 import { toast } from "react-toastify";
@@ -30,6 +33,8 @@ const AdminOrders = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         loadOrders();
@@ -66,6 +71,25 @@ const AdminOrders = () => {
             toast.error("Failed to update status");
         } finally {
             setUpdatingStatus(false);
+        }
+    };
+
+    const handleDeleteOrder = async () => {
+        try {
+            setDeleting(true);
+            await deleteOrderAPI(selectedOrder.id);
+
+            // Remove from orders list
+            setOrders(orders.filter(order => order.id !== selectedOrder.id));
+            setShowDetailsModal(false);
+            setShowDeleteConfirm(false);
+            setSelectedOrder(null);
+            toast.success("Order deleted successfully");
+        } catch (error) {
+            console.error("Error deleting order:", error);
+            toast.error("Failed to delete order");
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -458,21 +482,86 @@ const AdminOrders = () => {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3 justify-end">
-                            <button
-                                onClick={() => setShowDetailsModal(false)}
-                                className="px-6 py-3 font-bold text-gray-500 hover:bg-gray-200 rounded-xl transition-colors"
-                            >
-                                Close
-                            </button>
-                            <button
-                                onClick={() => handleDownloadInvoice(selectedOrder)}
-                                className="px-6 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors flex items-center gap-2"
-                            >
-                                Download Invoice <ArrowUpRight size={16} />
-                            </button>
+                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3 justify-between">
+                            {selectedOrder.order_status === "Delivered" && (
+                                <button
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    className="px-6 py-3 font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 border-2 border-red-200"
+                                >
+                                    <Trash2 size={18} /> Delete Order
+                                </button>
+                            )}
+                            {selectedOrder.order_status !== "Delivered" && (
+                                <div></div>
+                            )}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowDetailsModal(false)}
+                                    className="px-6 py-3 font-bold text-gray-500 hover:bg-gray-200 rounded-xl transition-colors"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    onClick={() => handleDownloadInvoice(selectedOrder)}
+                                    className="px-6 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors flex items-center gap-2"
+                                >
+                                    Download Invoice <ArrowUpRight size={16} />
+                                </button>
+                            </div>
                         </div>
 
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 overflow-hidden">
+                        {/* Icon */}
+                        <div className="pt-8 flex justify-center">
+                            <div className="h-16 w-16 rounded-full bg-red-50 flex items-center justify-center">
+                                <AlertTriangle className="w-8 h-8 text-red-600" />
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-8 text-center space-y-4">
+                            <h3 className="text-2xl font-black text-black">
+                                Delete Order?
+                            </h3>
+                            <p className="text-gray-500 text-sm leading-relaxed">
+                                Are you sure you want to delete order <span className="font-bold text-black">#{selectedOrder?.id.slice(0, 8)}</span>? This action cannot be undone.
+                            </p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="px-8 pb-8 flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                disabled={deleting}
+                                className="flex-1 px-6 py-3 font-bold text-gray-600 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteOrder}
+                                disabled={deleting}
+                                className="flex-1 px-6 py-3 font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {deleting ? (
+                                    <>
+                                        <Loader className="w-4 h-4 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
