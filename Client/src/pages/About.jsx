@@ -1,17 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import Button from "../components/ui/Button";
-import { formatPrice } from "../utils/currencyFormatter";
+import React from "react";
 import {
-  Star,
-  ChevronRight,
-  ChevronLeft,
-  Zap,
-  Truck,
-  RotateCcw,
-  ShieldCheck,
-  ShoppingBag,
+  Heart,
+  BadgeCheck,
+  Users,
+  Target,
 } from "lucide-react";
 
 const FeatureCard = ({ icon: Icon, title, description }) => {
