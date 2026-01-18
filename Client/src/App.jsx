@@ -27,14 +27,13 @@ import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import UpdatePassword from "./pages/Auth/UpdatePassword";
 import UpdateProfile from "./pages/Auth/UpdateProfile";
+import About from "./pages/About"; 
 
-// 404 Page
 import NotFound from "./pages/NotFound";
 
 const App = () => {
   const dispatch = useDispatch();
 
-  // Check if user is authenticated on app load
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
