@@ -8,15 +8,18 @@ import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import adminRouter from "./router/adminRoutes.js";
 import authRouter from "./router/authRoutes.js";
 import orderRouter from "./router/orderRoutes.js";
+import paymentRouter from "./router/paymentRoutes.js";
 import productRouter from "./router/productRoutes.js";
+import notificationRouter from "./router/notificationRoutes.js";
 import { createTables } from "./utils/createTables.js";
+import database from "./database/db.js";
 
 const app = express();
 
 config({ path: "./config/config.env" });
 
 app.use(cors({
-  origin: [process.env.FRONTEND_URL, process.env.DASHBOARD_URL],
+  origin: process.env.FRONTEND_URL,
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 })
@@ -79,9 +82,23 @@ app.use(fileUpload({
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/product", productRouter);
 app.use("/api/v1/order", orderRouter);
+app.use("/api/v1/payment", paymentRouter);
 app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
 createTables();
+
+// Run migrations
+async function runMigrations() {
+  try {
+    await database.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS deleted_by_user BOOLEAN DEFAULT false;`);
+    console.log("✅ Migration: Added deleted_by_user column to orders table");
+  } catch (error) {
+    console.log("ℹ️  Column already exists or other info:", error.message);
+  }
+}
+
+runMigrations();
 
 app.use(errorMiddleware);
 

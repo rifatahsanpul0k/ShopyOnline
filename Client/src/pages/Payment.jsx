@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   CardElement,
   useStripe,
   useElements,
-  PaymentElement,
 } from "@stripe/react-stripe-js";
-import { Lock, AlertCircle, Check, ArrowLeft, Loader } from "lucide-react";
+import { Lock, AlertCircle, Check, ArrowLeft, Loader, ChevronRight } from "lucide-react";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
+import { createPaymentIntentAPI, updatePaymentStatusAPI } from "../services/paymentService";
 
 // Note: This component requires Stripe setup. See implementation notes below.
 
@@ -20,7 +20,7 @@ const Payment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [_clientSecret, setClientSecret] = useState(null);
+  const [clientSecret, setClientSecret] = useState(null);
 
   const paymentData = location.state;
 
@@ -34,29 +34,37 @@ const Payment = () => {
       return;
     }
 
-    // TODO: BACKEND API CONNECTION
-    // Call backend endpoint to create payment intent
-    // POST /api/v1/payments/create-intent
-    // Body: {
-    //   orderId: paymentData.orderId,
-    //   amount: paymentData.orderSummary.total, // Amount in USD
-    //   currency: 'usd',
-    //   metadata: {
-    //     userId: authUser.id,
-    //     items: paymentData.orderSummary.items
-    //   }
-    // }
-    // Response: { clientSecret: "pi_xxxxx" }
+    // Create payment intent on mount
+    const initializePayment = async () => {
+      try {
+        console.log("Initializing payment with data:", paymentData);
+        const response = await createPaymentIntentAPI(
+          paymentData.orderId,
+          paymentData.orderSummary.total
+        );
 
-    // DEMO: Simulate backend response
-    setClientSecret("pi_demo_" + Date.now());
+        console.log("Payment initialization response:", response);
+
+        if (response.success) {
+          setClientSecret(response.clientSecret);
+        } else {
+          console.error("Payment initialization failed:", response);
+          setError(response.message || "Failed to initialize payment");
+        }
+      } catch (err) {
+        console.error("Payment initialization error:", err);
+        setError(err.message || "Failed to initialize payment");
+      }
+    };
+
+    initializePayment();
   }, [paymentData, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
-      setError("Payment system not initialized");
+    if (!stripe || !elements || !clientSecret) {
+      setError("Payment system not ready");
       return;
     }
 
@@ -64,23 +72,46 @@ const Payment = () => {
     setError(null);
 
     try {
-      // TODO: BACKEND API CONNECTION
-      // This should call your backend endpoint:
-      // POST /api/v1/payments/confirm
-      // Body: {
-      //   paymentMethodId: paymentMethod.id,
-      //   clientSecret: clientSecret,
-      //   orderId: paymentData.orderId,
-      //   userId: authUser.id
-      // }
+      const cardElement = elements.getElement(CardElement);
 
-      // DEMO: Simulate successful payment
-      // In production, use stripe.confirmCardPayment(clientSecret, {...})
-      setTimeout(() => {
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: paymentData.shippingInfo.fullName,
+              email: paymentData.shippingInfo.email,
+              address: {
+                line1: paymentData.shippingInfo.address,
+                city: paymentData.shippingInfo.city,
+                state: paymentData.shippingInfo.state,
+                postal_code: paymentData.shippingInfo.zipCode,
+              },
+            },
+          },
+        }
+      );
+
+      if (stripeError) {
+        setError(stripeError.message);
+        setIsProcessing(false);
+      } else if (paymentIntent && paymentIntent.status === "succeeded") {
+        console.log("Payment succeeded:", paymentIntent);
+
+        // Update payment status in database (non-blocking)
+        try {
+          await updatePaymentStatusAPI(paymentData.orderId, "Paid");
+          console.log("Database updated successfully");
+        } catch (dbError) {
+          console.error("Failed to update database but payment succeeded:", dbError);
+          // We intentionally ignore this error for the UI flow because the payment WAS successful
+        }
+
         setSuccess(true);
         setIsProcessing(false);
 
-        // After 2 seconds, redirect to success page
+        // Redirect to success page
         setTimeout(() => {
           navigate("/payment/success", {
             state: {
@@ -89,35 +120,9 @@ const Payment = () => {
             },
           });
         }, 2000);
-      }, 1500);
-
-      // Real Stripe implementation:
-      // const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
-      //   payment_method: {
-      //     card: elements.getElement(CardElement),
-      //     billing_details: {
-      //       name: paymentData.shippingInfo.fullName,
-      //       email: paymentData.shippingInfo.email,
-      //     },
-      //   },
-      // });
-
-      // if (error) {
-      //   setError(error.message);
-      //   setIsProcessing(false);
-      // } else if (paymentIntent && paymentIntent.status === "succeeded") {
-      //   setSuccess(true);
-      //   setIsProcessing(false);
-      //   setTimeout(() => {
-      //     navigate("/payment/success", {
-      //       state: {
-      //         orderId: paymentIntent.id,
-      //         amount: paymentData.orderSummary.total,
-      //       },
-      //     });
-      //   }, 2000);
-      // }
+      }
     } catch (err) {
+      console.error("Payment error:", err);
       setError(err.message || "Payment failed. Please try again.");
       setIsProcessing(false);
     }
@@ -143,14 +148,22 @@ const Payment = () => {
   return (
     <div className="min-h-screen bg-white py-12 px-4">
       <div className="max-w-[1440px] mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate("/checkout")}
-          className="flex items-center gap-2 text-black hover:opacity-70 transition mb-8"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Checkout
-        </button>
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
+          <Link to="/" className="hover:text-black transition">
+            Home
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <Link to="/cart" className="hover:text-black transition">
+            Cart
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <Link to="/checkout" className="hover:text-black transition">
+            Checkout
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-black font-medium">Payment</span>
+        </div>
 
         {/* Page Title */}
         <h1 className="text-5xl font-heading font-bold text-black mb-12">
@@ -258,9 +271,11 @@ const Payment = () => {
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-card p-4 flex gap-3">
                     <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                    <div>
+                    <div className="overflow-hidden">
                       <p className="font-medium text-red-900">Payment Failed</p>
-                      <p className="text-sm text-red-800">{error}</p>
+                      <p className="text-sm text-red-800 whitespace-pre-wrap break-words">
+                        {typeof error === 'object' ? JSON.stringify(error, null, 2) : error}
+                      </p>
                     </div>
                   </div>
                 )}

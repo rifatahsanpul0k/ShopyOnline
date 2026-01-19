@@ -14,37 +14,18 @@ import {
   ShoppingCart,
   ArrowLeft,
   AlertCircle,
+  ChevronRight,
 } from "lucide-react";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
 
-// Dummy product for testing
-const DUMMY_PRODUCT = {
-  id: "dummy_stripe_test",
-  name: "Premium Wireless Headphones",
-  price: 79.99,
-  quantity: 1,
-  image:
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
-  category: "electronics",
-};
+// ... imports
 
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { cart } = useSelector((state) => state.cart);
   const { authUser } = useSelector((state) => state.auth);
-
-  // Load dummy product if cart is empty (for testing Stripe payment)
-  useEffect(() => {
-    if (
-      cart.length === 0 &&
-      localStorage.getItem("showDummyProduct") === "true"
-    ) {
-      dispatch(addToCart(DUMMY_PRODUCT));
-      localStorage.removeItem("showDummyProduct");
-    }
-  }, [dispatch, cart.length]);
 
   // Calculate totals
   const subtotal = cart.reduce(
@@ -99,14 +80,12 @@ const Cart = () => {
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="max-w-[1440px] mx-auto">
           {/* Breadcrumb */}
-          <div className="mb-8">
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-gray-600 hover:text-black transition"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Continue Shopping
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
+            <Link to="/" className="hover:text-black transition">
+              Home
             </Link>
+            <ChevronRight size={16} />
+            <span className="text-black font-medium">Cart</span>
           </div>
 
           {/* Empty Cart */}
@@ -123,14 +102,6 @@ const Cart = () => {
               <Link to="/products">
                 <Button>Continue Shopping</Button>
               </Link>
-              <button
-                onClick={() => {
-                  dispatch(addToCart(DUMMY_PRODUCT));
-                }}
-                className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-pill hover:bg-blue-600 transition"
-              >
-                🧪 Load Test Product (For Stripe)
-              </button>
             </div>
           </div>
         </div>
@@ -141,16 +112,14 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-white py-12 px-4">
       <div className="max-w-[1440px] mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 hover:text-black transition mb-6 font-medium"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back
-        </button>
-
-        {/* Header */}
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
+          <Link to="/" className="hover:text-black transition">
+            Home
+          </Link>
+          <ChevronRight size={16} />
+          <span className="text-black font-medium">Cart</span>
+        </div>        {/* Header */}
         <div className="mb-12">
           <h1 className="text-5xl font-heading font-bold text-black mb-2">
             Shopping Cart
@@ -322,13 +291,7 @@ const Cart = () => {
                 Proceed to Checkout
               </button>
 
-              {/* Clear Cart Button */}
-              <button
-                onClick={handleClearCart}
-                className="w-full border border-gray-300 text-black font-medium py-3 rounded-pill hover:bg-gray-100 transition"
-              >
-                Clear Cart
-              </button>
+
 
               {/* Trust Badges */}
               <div className="mt-8 space-y-3 pt-6 border-t border-gray-300">

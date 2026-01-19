@@ -29,4 +29,99 @@
   h6 {
     @apply font-heading font-bold;
   }
+
+  /* React Toastify Theme Overrides - STRICT BLACK & WHITE THEME */
+  .Toastify__toast {
+    @apply font-sans rounded-xl shadow-none border-2 !important;
+  }
+
+  .Toastify__toast-body {
+    @apply font-bold text-sm !important;
+  }
+
+  /* Success: Black Background, White Text */
+  .Toastify__toast--success {
+    @apply bg-black text-white border-black !important;
+  }
+
+  .Toastify__toast--success .Toastify__close-button {
+    @apply text-white opacity-100 !important;
+  }
+
+  .Toastify__toast--success .Toastify__progress-bar {
+    @apply bg-white !important;
+  }
+
+  /* Force Icon to be white for success */
+  .Toastify__toast--success svg {
+    fill: white !important;
+  }
+
+  /* Error: White Background, Black Text, Red Border (or Black Border for strict mono) */
+  .Toastify__toast--error {
+    @apply bg-white text-black border-black !important;
+  }
+
+  .Toastify__toast--error .Toastify__close-button {
+    @apply text-black opacity-100 !important;
+  }
+
+  .Toastify__toast--error .Toastify__progress-bar {
+    @apply bg-black !important;
+  }
+
+  .Toastify__toast--error svg {
+    fill: black !important;
+  }
+
+  /* Info/Warning: White Background, Black Text */
+  .Toastify__toast--info,
+  .Toastify__toast--warning {
+    @apply bg-white text-black border-black !important;
+  }
+
+  .Toastify__toast--info .Toastify__progress-bar,
+  .Toastify__toast--warning .Toastify__progress-bar {
+    @apply bg-black !important;
+  }
+
+  .Toastify__toast--info .Toastify__close-button,
+  .Toastify__toast--warning .Toastify__close-button {
+    @apply text-black opacity-100 !important;
+  }
+
+  /* Override Icon colors generally just in case */
+  .Toastify__toast-icon>svg {
+    fill: currentColor !important;
+  }
+
+  /* Styled scrollbar for sliders */
+  .overflow-x-auto {
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: #000000 #f3f4f6;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 10px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #000000;
+    border-radius: 10px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #404040;
+  }
+
+  .snap-start {
+    scroll-snap-align: start;
+  }
 }

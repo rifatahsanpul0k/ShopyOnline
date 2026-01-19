@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate, Link } from "react-router-dom";
 import {
   ChevronRight,
   Package,
@@ -13,10 +13,16 @@ import {
   X,
   Loader,
   ArrowLeft,
+  Trash2,
+  AlertTriangle,
+  Star,
+  Check,
 } from "lucide-react";
 import Button from "../components/ui/Button";
-import { getUserOrdersAPI } from "../services/ordersService.js";
+import { getUserOrdersAPI, deleteOrderAPI } from "../services/ordersService.js";
 import { generateInvoicePDF } from "../utils/invoiceGenerator.js";
+import { toast } from "react-toastify";
+import { postReview, fetchSingleProduct } from "../store/slices/productSlice";
 
 // Dummy data for development/testing
 const DUMMY_ORDERS = [
@@ -178,13 +184,24 @@ const DUMMY_ORDERS = [
 
 const Orders = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { authUser } = useSelector((state) => state.auth);
+  const { isPostingReview } = useSelector((state) => state.product);
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Review Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewProduct, setReviewProduct] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [productReviews, setProductReviews] = useState({});
 
   // Fetch orders from API
   useEffect(() => {
@@ -193,23 +210,78 @@ const Orders = () => {
         setLoading(true);
         const data = await getUserOrdersAPI();
 
-        // Transform API response to match frontend format
-        const transformedOrders = (data.orders || []).map((order) => ({
-          id: order.id,
-          date: order.date,
-          total: order.total,
-          status: order.status?.toLowerCase() || "processing",
-          items: Array.isArray(order.items) ? order.items : [],
-          shippingInfo: order.shippingInfo || {},
-        }));
+        console.log("Orders response:", data);
 
-        setOrders(
-          transformedOrders.length > 0 ? transformedOrders : DUMMY_ORDERS
-        );
+        // Backend returns 'myOrders' field
+        const ordersData = data.myOrders || [];
+
+        // Transform API response to match frontend format
+        const transformedOrders = ordersData.map((order) => {
+          // Parse order_items which is JSON string from backend
+          const orderItems = typeof order.order_items === 'string'
+            ? JSON.parse(order.order_items)
+            : (order.order_items || []);
+
+          // Parse shipping_info which is JSON object
+          const shippingInfo = typeof order.shipping_info === 'string'
+            ? JSON.parse(order.shipping_info)
+            : (order.shipping_info || {});
+
+          return {
+            id: order.id,
+            date: order.created_at || order.date,
+            total: parseFloat(order.total_price || 0),
+            status: (order.order_status || 'processing').toLowerCase(),
+            items: orderItems.map(item => ({
+              id: item.product_id,
+              name: item.title || 'Product',
+              price: parseFloat(item.price || 0),
+              quantity: parseInt(item.quantity || 1),
+              image: item.image
+            })),
+            shippingInfo: {
+              fullName: shippingInfo.full_name,
+              email: authUser?.email,
+              phone: shippingInfo.phone,
+              address: shippingInfo.address,
+              city: shippingInfo.city,
+              state: shippingInfo.state,
+              country: shippingInfo.country,
+              pincode: shippingInfo.pincode
+            }
+          };
+        });
+
+        setOrders(transformedOrders);
+
+        // Fetch reviews for all products in delivered orders
+        const deliveredOrders = transformedOrders.filter(o => o.status === 'delivered');
+        const reviewsMap = {};
+
+        for (const order of deliveredOrders) {
+          for (const item of order.items) {
+            if (item.id && !reviewsMap[item.id]) {
+              try {
+                const productResponse = await dispatch(fetchSingleProduct(item.id)).unwrap();
+                if (productResponse?.product?.reviews && authUser) {
+                  const userReview = productResponse.product.reviews.find(
+                    review => review.reviewer?.id === authUser.id
+                  );
+                  if (userReview) {
+                    reviewsMap[item.id] = userReview;
+                  }
+                }
+              } catch (error) {
+                console.error(`Error fetching reviews for product ${item.id}:`, error);
+              }
+            }
+          }
+        }
+
+        setProductReviews(reviewsMap);
       } catch (err) {
         console.error("Error fetching orders:", err);
-        // Use dummy data as fallback
-        setOrders(DUMMY_ORDERS);
+        setOrders([]);
       } finally {
         setLoading(false);
       }
@@ -217,6 +289,10 @@ const Orders = () => {
 
     if (authUser) {
       fetchOrders();
+
+      // Auto-refresh orders every 30 seconds to check for status updates
+      const interval = setInterval(fetchOrders, 30000);
+      return () => clearInterval(interval);
     }
   }, [authUser]);
 
@@ -301,6 +377,57 @@ const Orders = () => {
     setTimeout(() => setSelectedOrder(null), 300);
   };
 
+  // Handle review submit
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!comment.trim()) {
+      toast.error("Please write a comment");
+      return;
+    }
+
+    try {
+      await dispatch(postReview({
+        productId: reviewProduct.id,
+        rating,
+        comment
+      })).unwrap();
+
+      // Update productReviews state with the new/updated review
+      setProductReviews(prev => ({
+        ...prev,
+        [reviewProduct.id]: { rating, comment, reviewer: { id: authUser.id } }
+      }));
+
+      setShowReviewModal(false);
+      setReviewProduct(null);
+      setComment("");
+      setRating(5);
+      toast.success(productReviews[reviewProduct.id] ? "Review updated successfully!" : "Review submitted successfully!");
+    } catch (error) {
+      console.error("Failed to post review:", error);
+    }
+  };
+
+  // Handle delete order
+  const handleDeleteOrder = async (orderId) => {
+    try {
+      setDeleting(true);
+      await deleteOrderAPI(orderId);
+
+      // Remove from orders list
+      setOrders(orders.filter(order => order.id !== orderId));
+      setIsDetailModalOpen(false);
+      setShowDeleteConfirm(false);
+      setSelectedOrder(null);
+      toast.success("Order deleted successfully");
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      toast.error("Failed to delete order");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!authUser) {
     return null;
   }
@@ -310,14 +437,18 @@ const Orders = () => {
       {/* Header */}
       <section className="py-16 px-6 lg:px-12 bg-gradient-to-r from-black to-gray-900 text-white">
         <div className="max-w-[1440px] mx-auto">
-          {/* Back Button */}
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-white/80 hover:text-white transition mb-6 font-medium"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back
-          </button>
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center gap-2 text-sm text-white/60 mb-6">
+            <Link to="/" className="hover:text-white transition">
+              Home
+            </Link>
+            <ChevronRight className="w-4 h-4" />
+            <Link to="/profile" className="hover:text-white transition">
+              Profile
+            </Link>
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-white font-medium">My Orders</span>
+          </div>
 
           <h1 className="text-5xl lg:text-6xl font-heading font-bold mb-2">
             My Orders
@@ -359,11 +490,10 @@ const Orders = () => {
               <button
                 key={filter.value}
                 onClick={() => setFilterStatus(filter.value)}
-                className={`px-6 py-3 rounded-pill font-medium transition ${
-                  filterStatus === filter.value
-                    ? "bg-black text-white"
-                    : "bg-gray-100 text-black hover:bg-gray-200"
-                }`}
+                className={`px-6 py-3 rounded-pill font-medium transition ${filterStatus === filter.value
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-black hover:bg-gray-200"
+                  }`}
               >
                 {filter.label}
                 <span className="ml-2 text-sm opacity-70">
@@ -437,23 +567,84 @@ const Orders = () => {
                           key={idx}
                           className="flex gap-4 pb-4 border-b border-gray-200 last:border-b-0 last:pb-0"
                         >
-                          {item.image && (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-20 h-20 rounded-card object-cover border border-gray-200"
-                            />
-                          )}
+                          <Link to={`/product/${item.id}`} className="shrink-0">
+                            {item.image && (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-20 h-20 rounded-card object-cover border border-gray-200 hover:opacity-80 transition"
+                              />
+                            )}
+                          </Link>
                           <div className="flex-1">
-                            <h4 className="font-semibold text-black line-clamp-2">
-                              {item.name}
-                            </h4>
+                            <Link to={`/product/${item.id}`}>
+                              <h4 className="font-semibold text-black line-clamp-2 hover:text-gray-600 transition cursor-pointer">
+                                {item.name}
+                              </h4>
+                            </Link>
                             <p className="text-gray-600 text-sm mt-1">
                               Qty: {item.quantity}
                             </p>
                             <p className="font-bold text-black mt-2">
                               ${(item.price * item.quantity).toFixed(2)}
                             </p>
+
+                            {/* Rate & Review Button for Delivered Orders */}
+                            {order.status === "delivered" && (
+                              <div>
+                                {productReviews[item.id] ? (
+                                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Check className="w-4 h-4 text-green-600" />
+                                      <span className="text-green-700 font-semibold text-sm">
+                                        You reviewed this product
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1 mb-1">
+                                      {[...Array(5)].map((_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={`w-3 h-3 ${i < productReviews[item.id].rating
+                                            ? "fill-yellow-400 text-yellow-400"
+                                            : "text-gray-300"
+                                            }`}
+                                        />
+                                      ))}
+                                      <span className="text-xs text-gray-600 ml-1">
+                                        {productReviews[item.id].rating}/5
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-gray-600 line-clamp-2">
+                                      {productReviews[item.id].comment}
+                                    </p>
+                                    <button
+                                      onClick={() => {
+                                        setReviewProduct(item);
+                                        setRating(productReviews[item.id].rating);
+                                        setComment(productReviews[item.id].comment);
+                                        setShowReviewModal(true);
+                                      }}
+                                      className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                    >
+                                      Edit Review
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setReviewProduct(item);
+                                      setRating(5);
+                                      setComment("");
+                                      setShowReviewModal(true);
+                                    }}
+                                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold text-sm rounded-full hover:from-yellow-500 hover:to-orange-600 transition-all transform hover:scale-105 shadow-md"
+                                  >
+                                    <Star className="w-4 h-4 fill-black" />
+                                    Rate & Review
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -478,15 +669,6 @@ const Orders = () => {
                         <Eye className="w-4 h-4" />
                         View Details
                       </button>
-                      {order.status === "delivered" && (
-                        <button
-                          onClick={() => generateInvoicePDF(order, authUser)}
-                          className="flex items-center gap-2 px-4 py-3 border-2 border-black text-black font-medium rounded-pill hover:bg-gray-100 transition"
-                        >
-                          <Download className="w-4 h-4" />
-                          Invoice
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -546,27 +728,24 @@ const Orders = () => {
                     <div key={idx} className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition ${
-                            item.completed
-                              ? "bg-black text-white"
-                              : "bg-gray-200 text-gray-600"
-                          }`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition ${item.completed
+                            ? "bg-black text-white"
+                            : "bg-gray-200 text-gray-600"
+                            }`}
                         >
                           {item.completed ? "✓" : idx + 1}
                         </div>
                         {idx < 3 && (
                           <div
-                            className={`w-1 h-8 ${
-                              item.completed ? "bg-black" : "bg-gray-200"
-                            }`}
+                            className={`w-1 h-8 ${item.completed ? "bg-black" : "bg-gray-200"
+                              }`}
                           />
                         )}
                       </div>
                       <div>
                         <p
-                          className={`font-semibold ${
-                            item.completed ? "text-black" : "text-gray-600"
-                          }`}
+                          className={`font-semibold ${item.completed ? "text-black" : "text-gray-600"
+                            }`}
                         >
                           {item.step}
                         </p>
@@ -667,6 +846,15 @@ const Orders = () => {
                     Download Invoice
                   </button>
                 )}
+                {(selectedOrder.status === "delivered" || selectedOrder.status === "cancelled") && (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-red-500 text-red-500 font-bold rounded-pill hover:bg-red-50 transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Order
+                  </button>
+                )}
                 <button
                   onClick={handleCloseModal}
                   className="flex-1 px-4 py-3 bg-black text-white font-bold rounded-pill hover:opacity-90 transition"
@@ -675,6 +863,122 @@ const Orders = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 overflow-hidden">
+            {/* Icon */}
+            <div className="pt-8 flex justify-center">
+              <div className="h-16 w-16 rounded-full bg-red-50 flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-8 text-center space-y-4">
+              <h3 className="text-2xl font-black text-black">
+                Delete Order?
+              </h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Are you sure you want to delete order <span className="font-bold text-black">#{selectedOrder?.id.slice(0, 8)}</span>? This action cannot be undone.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="px-8 pb-8 flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 px-6 py-3 font-bold text-gray-600 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteOrder(selectedOrder.id)}
+                disabled={deleting}
+                className="flex-1 px-6 py-3 font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {showReviewModal && reviewProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-lg w-full relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => {
+                setShowReviewModal(false);
+                setReviewProduct(null);
+                setComment("");
+                setRating(5);
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-black transition"
+            >
+              <X size={24} />
+            </button>
+
+            <h2 className="text-2xl font-black uppercase mb-2">
+              {productReviews[reviewProduct.id] ? "Edit Review" : "Rate & Review"}
+            </h2>
+            <p className="text-gray-600 mb-6">{reviewProduct.name}</p>
+
+            <form onSubmit={handleReviewSubmit}>
+              <div className="mb-6">
+                <label className="block text-sm font-bold uppercase mb-2">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className="transition-transform hover:scale-110"
+                    >
+                      <Star
+                        size={32}
+                        className={star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-bold uppercase mb-2">Your Review</label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share your experience with this product..."
+                  className="w-full h-32 p-4 rounded-xl border-2 border-gray-200 focus:border-black outline-none resize-none transition"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isPostingReview}
+                className="w-full bg-black text-white py-4 rounded-full font-bold uppercase hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPostingReview ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
           </div>
         </div>
       )}

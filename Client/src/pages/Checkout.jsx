@@ -1,13 +1,17 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { ChevronLeft, Lock, Check, AlertCircle } from "lucide-react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { ChevronLeft, Lock, Check, AlertCircle, ChevronRight } from "lucide-react";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
+import { createOrderAPI } from "../services/ordersService";
+import { toast } from "react-toastify";
+import { clearCart } from "../store/slices/cartSlice";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
   const { authUser } = useSelector((state) => state.auth);
   const orderSummary = location.state?.orderSummary;
 
@@ -136,30 +140,54 @@ const Checkout = () => {
       if (!validateBilling()) return;
       setFormStep(3);
     } else if (formStep === 3) {
-      // Proceed to payment
+      // Proceed to payment - Create order in backend
       setIsLoading(true);
       try {
-        // TODO: Connect to backend endpoint: POST /api/v1/checkout/prepare
-        // This should:
-        // 1. Create order with shipping/billing info
-        // 2. Return Stripe client secret
-        // 3. Redirect to /payment with order ID
+        // Prepare order data for backend
+        const orderData = {
+          full_name: shippingInfo.fullName,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          state: shippingInfo.state,
+          pincode: shippingInfo.zipCode,
+          country: shippingInfo.country,
+          phone: shippingInfo.phone,
+          orderedItems: orderSummary.items.map(item => ({
+            product: {
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              images: [{ url: item.image }],
+            },
+            quantity: item.quantity,
+          })),
+        };
 
-        // For now, redirect to payment page with demo data
-        setTimeout(() => {
+        // Create order via API
+        const response = await createOrderAPI(orderData);
+
+        if (response.success) {
+          toast.success("Order initiated! Proceeding to payment...");
+
+          // Clear cart after successful order creation
+          // Cart cleared on payment success
+          // dispatch(clearCart());
+
+          // Redirect to payment page with real order ID
           navigate("/payment", {
             state: {
-              orderId: "demo_" + Date.now(),
+              orderId: response.orderId,
               shippingInfo,
               billingInfo,
               orderSummary,
             },
           });
-          setIsLoading(false);
-        }, 800);
+        }
       } catch (error) {
-        console.error("Error preparing order:", error);
-        setErrors({ submit: "Failed to prepare order. Please try again." });
+        console.error("Error creating order:", error);
+        toast.error(error.message || "Failed to create order. Please try again.");
+        setErrors({ submit: error.message || "Failed to create order. Please try again." });
+      } finally {
         setIsLoading(false);
       }
     }
@@ -192,35 +220,37 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-white py-12 px-4">
       <div className="max-w-[1440px] mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={handleBackStep}
-          className="flex items-center gap-2 text-black hover:opacity-70 transition mb-8"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Back
-        </button>
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
+          <Link to="/" className="hover:text-black transition">
+            Home
+          </Link>
+          <ChevronRight size={16} />
+          <Link to="/cart" className="hover:text-black transition">
+            Cart
+          </Link>
+          <ChevronRight size={16} />
+          <span className="text-black font-medium">Checkout</span>
+        </div>
 
         {/* Progress Indicator */}
         <div className="flex items-center justify-center gap-4 mb-12">
           {[1, 2, 3].map((step) => (
             <div key={step} className="flex items-center gap-4">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                  step < formStep
-                    ? "bg-black text-white"
-                    : step === formStep
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${step < formStep
+                  ? "bg-black text-white"
+                  : step === formStep
                     ? "bg-black text-white ring-4 ring-black ring-offset-2"
                     : "bg-gray-200 text-gray-600"
-                }`}
+                  }`}
               >
                 {step < formStep ? <Check className="w-5 h-5" /> : step}
               </div>
               {step < 3 && (
                 <div
-                  className={`w-16 h-1 ${
-                    step < formStep ? "bg-black" : "bg-gray-300"
-                  }`}
+                  className={`w-16 h-1 ${step < formStep ? "bg-black" : "bg-gray-300"
+                    }`}
                 ></div>
               )}
             </div>
@@ -231,27 +261,24 @@ const Checkout = () => {
         <div className="flex justify-between mb-12 text-center">
           <div>
             <p
-              className={`font-bold ${
-                formStep >= 1 ? "text-black" : "text-gray-400"
-              }`}
+              className={`font-bold ${formStep >= 1 ? "text-black" : "text-gray-400"
+                }`}
             >
               Shipping
             </p>
           </div>
           <div>
             <p
-              className={`font-bold ${
-                formStep >= 2 ? "text-black" : "text-gray-400"
-              }`}
+              className={`font-bold ${formStep >= 2 ? "text-black" : "text-gray-400"
+                }`}
             >
               Billing
             </p>
           </div>
           <div>
             <p
-              className={`font-bold ${
-                formStep >= 3 ? "text-black" : "text-gray-400"
-              }`}
+              className={`font-bold ${formStep >= 3 ? "text-black" : "text-gray-400"
+                }`}
             >
               Review & Pay
             </p>
@@ -702,8 +729,8 @@ const Checkout = () => {
                   {isLoading
                     ? "Processing..."
                     : formStep === 3
-                    ? "Proceed to Payment"
-                    : "Continue"}
+                      ? "Proceed to Payment"
+                      : "Continue"}
                 </button>
 
                 <button

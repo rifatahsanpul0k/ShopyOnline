@@ -5,6 +5,7 @@ import { createProductReviewsTable } from "../models/productReviewsTable.js";
 import { createProductsTable } from "../models/productTable.js";
 import { createShippingInfoTable } from "../models/shippinginfoTable.js";
 import { createUserTable } from "../models/userTable.js";
+import { createNotificationsTable } from "../models/notificationsTable.js";
 
 export const createTables = async () => {
     try {
@@ -15,6 +16,7 @@ export const createTables = async () => {
         await createOrderItemTable();
         await createShippingInfoTable();
         await createPaymentsTable();
+        await createNotificationsTable();
         console.log("All Tables Created Successfully.");
     } catch (error) {
         console.error("Error creating tables:", error);

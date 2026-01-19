@@ -2,6 +2,7 @@ import ErrorHandler from "../middlewares/errorMiddleware.js";
 import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import database from "../database/db.js";
 import { generatePaymentIntent } from "../utils/generatePaymentIntent.js";
+import { createNotification } from "./notificationController.js";
 
 
 // Place a new order------->
@@ -138,10 +139,20 @@ export const placeNewOrder = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Payment failed. Try again.", 500));
   }
 
+  // Create notification for payment placed
+  await createNotification(
+    "payment_placed",
+    "New Payment Received",
+    `Payment of $${total_price.toFixed(2)} has been placed for order ${orderId.slice(0, 8)}...`,
+    orderId,
+    "order"
+  );
+
   // Send response
   res.status(200).json({
     success: true,
     message: "Order placed successfully. Please proceed to payment.",
+    orderId,
     paymentIntent: paymentResponse.clientSecret,
     total_price,
   });
@@ -225,7 +236,7 @@ export const fetchMyOrders = catchAsyncErrors(async (req, res, next) => {
     FROM orders o
     LEFT JOIN order_items oi ON o.id = oi.order_id
     LEFT JOIN shipping_info s ON o.id = s.order_id
-    WHERE o.buyer_id = $1
+    WHERE o.buyer_id = $1 AND (o.deleted_by_user = false OR o.deleted_by_user IS NULL)
     GROUP BY o.id, s.id
     `, [req.user.id]
   );
@@ -246,6 +257,9 @@ export const fetchAllOrders = catchAsyncErrors(async (req, res, next) => {
   const result = await database.query(
     `
     SELECT o.*,
+    u.name as user_name,
+    u.email as user_email,
+    u.avatar as user_avatar,
     COALESCE(json_agg(
     json_build_object(
     'order_item_id', oi.id,
@@ -266,9 +280,12 @@ export const fetchAllOrders = catchAsyncErrors(async (req, res, next) => {
     'phone', s.phone 
     ) AS shipping_info
     FROM orders o
+    LEFT JOIN users u ON o.buyer_id = u.id
     LEFT JOIN order_items oi ON o.id = oi.order_id
     LEFT JOIN shipping_info s ON o.id = s.order_id
-    GROUP BY o.id, s.id
+    WHERE o.deleted_by_admin = false OR o.deleted_by_admin IS NULL
+    GROUP BY o.id, s.id, u.id
+    ORDER BY o.created_at DESC
     `
   );
 
@@ -283,10 +300,10 @@ export const fetchAllOrders = catchAsyncErrors(async (req, res, next) => {
 
 // Admin: Update order status------->
 export const updateOrderStatus = catchAsyncErrors(async (req, res, next) => {
-  const { status } = req.body;
+  const { order_status } = req.body;
 
   // Validate status
-  if (!status) {
+  if (!order_status) {
     return next(new ErrorHandler("Provide a valid status for order.", 400));
   }
 
@@ -300,8 +317,28 @@ export const updateOrderStatus = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Invalid order ID.", 404));
   }
 
+  const order = results.rows[0];
+  const buyerId = order.buyer_id;
+
   // Update order status
-  const updatedOrder = await database.query(`UPDATE orders SET order_status = $1 WHERE id = $2 RETURNING *`, [status, orderId]);
+  const updatedOrder = await database.query(`UPDATE orders SET order_status = $1 WHERE id = $2 RETURNING *`, [order_status, orderId]);
+
+  // Create notification for user about order status change
+  const statusMessages = {
+    'Processing': 'Your order is now being processed.',
+    'Shipped': 'Your order has been shipped and is on its way!',
+    'Delivered': 'Your order has been delivered successfully!',
+    'Cancelled': 'Your order has been cancelled.'
+  };
+
+  await createNotification(
+    "order_status_update",
+    `Order Status: ${order_status}`,
+    statusMessages[order_status] || `Your order status has been updated to ${order_status}.`,
+    orderId,
+    "order",
+    buyerId
+  );
 
   // Send response
   res.status(200).json({
@@ -327,5 +364,74 @@ export const deleteOrder = catchAsyncErrors(async (req, res, next) => {
     success: true,
     message: "Order deleted.",
     order: results.rows[0],
+  });
+});
+
+// User: Delete their own delivered order
+export const deleteUserOrder = catchAsyncErrors(async (req, res, next) => {
+  const { orderId } = req.params;
+  const userId = req.user.id;
+
+  // Check if order exists and belongs to current user
+  const orderCheck = await database.query(
+    `SELECT * FROM orders WHERE id = $1 AND buyer_id = $2`,
+    [orderId, userId]
+  );
+
+  if (orderCheck.rows.length === 0) {
+    return next(new ErrorHandler("Order not found or you don't have permission to delete it.", 404));
+  }
+
+  const order = orderCheck.rows[0];
+
+  // Only allow deletion of delivered or cancelled orders
+  if (order.order_status !== "Delivered" && order.order_status !== "Cancelled") {
+    return next(new ErrorHandler("Only delivered or cancelled orders can be deleted.", 400));
+  }
+
+  // Soft delete: Mark order as deleted for user (order remains in database for admin)
+  const deleteResult = await database.query(
+    `UPDATE orders SET deleted_by_user = true WHERE id = $1 RETURNING *`,
+    [orderId]
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Order deleted successfully.",
+    order: deleteResult.rows[0],
+  });
+});
+
+// Admin: Delete an order
+export const deleteAdminOrder = catchAsyncErrors(async (req, res, next) => {
+  const { orderId } = req.params;
+
+  // Check if order exists
+  const orderCheck = await database.query(
+    `SELECT * FROM orders WHERE id = $1`,
+    [orderId]
+  );
+
+  if (orderCheck.rows.length === 0) {
+    return next(new ErrorHandler("Order not found.", 404));
+  }
+
+  const order = orderCheck.rows[0];
+
+  // Only allow deletion of delivered or cancelled orders
+  if (order.order_status !== "Delivered" && order.order_status !== "Cancelled") {
+    return next(new ErrorHandler("Only delivered or cancelled orders can be deleted.", 400));
+  }
+
+  // Soft delete: Mark order as deleted by admin (hidden from admin view only)
+  const deleteResult = await database.query(
+    `UPDATE orders SET deleted_by_admin = true WHERE id = $1 RETURNING *`,
+    [orderId]
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Order deleted successfully.",
+    order: deleteResult.rows[0],
   });
 });

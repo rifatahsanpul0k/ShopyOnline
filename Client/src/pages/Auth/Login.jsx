@@ -5,6 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../../store/slices/authSlice";
 import Button from "../../components/ui/Button";
 
+import { ROLE_ADMIN } from "../../constants/roles";
+import { ADMIN_DASHBOARD_ROUTE } from "../../constants/routes";
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
@@ -25,6 +28,12 @@ const Login = () => {
     if (result.payload?.user) {
       console.log("✅ Login successful!");
       setFormData({ email: "", password: "" });
+
+      // Admin Redirection
+      if (result.payload.user.role === ROLE_ADMIN) {
+        navigate(ADMIN_DASHBOARD_ROUTE);
+        return;
+      }
 
       // Check if there's a redirect parameter
       const redirectTo = searchParams.get("redirect");
@@ -49,11 +58,10 @@ const Login = () => {
           <p className="text-gray-600">
             Don't have an account?{" "}
             <Link
-              to={`/auth/register${
-                searchParams.get("redirect")
+              to={`/auth/register${searchParams.get("redirect")
                   ? `?redirect=${searchParams.get("redirect")}`
                   : ""
-              }`}
+                }`}
               className="text-black font-medium hover:opacity-70 transition-opacity"
             >
               Register

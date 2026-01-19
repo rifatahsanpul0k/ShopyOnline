@@ -67,8 +67,9 @@ export const forgotPassword = createAsyncThunk(
   "auth/password/forgot",
   async (email, thunkAPI) => {
     try {
+      const frontendUrl = window.location.origin;
       const res = await axiosInstance.post(
-        "/auth/password/forgot?frontendUrl=http://localhost:5173",
+        `/auth/password/forgot?frontendUrl=${frontendUrl}`,
         { email }
       );
       toast.success(res.data.message || "Reset link sent to your email");
@@ -150,6 +151,9 @@ const authSlice = createSlice({
       state.user = null;
       state.authUser = null;
     },
+    checkAuth: (state) => {
+      state.isCheckingAuth = false;
+    },
   },
   //9H:51
   extraReducers: (builder) => {
@@ -160,11 +164,12 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isSigningUp = false;
-        state.user = action.payload.user;
-        state.authUser = action.payload.user;
-        if (action.payload.token) {
-          localStorage.setItem("token", action.payload.token);
-        }
+        // Do not auto-login after registration as per requirement
+        // state.user = action.payload.user;
+        // state.authUser = action.payload.user;
+        // if (action.payload.token) {
+        //   localStorage.setItem("token", action.payload.token);
+        // }
       })
       .addCase(registerUser.rejected, (state) => {
         state.isSigningUp = false;
@@ -258,6 +263,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, logout } = authSlice.actions;
+export const { setUser, logout, checkAuth } = authSlice.actions;
 
 export default authSlice.reducer;

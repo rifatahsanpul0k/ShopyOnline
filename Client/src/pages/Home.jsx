@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import Button from "../components/ui/Button";
 import { formatPrice } from "../utils/currencyFormatter";
+import { fetchAllProducts } from "../store/slices/productSlice";
 import {
   Star,
   ChevronRight,
@@ -12,7 +13,11 @@ import {
   RotateCcw,
   ShieldCheck,
   ShoppingBag,
+  ArrowRight,
+  Clock,
+  Search,
 } from "lucide-react";
+import StockBadge from "../components/ui/StockBadge";
 
 // Hero Slider Data
 const HERO_SLIDES = [
@@ -20,7 +25,7 @@ const HERO_SLIDES = [
     id: 1,
     title: "TRUSTED BRANDS.",
     subtitle: "Precision engineered components. Uncompromising power.",
-    image: "/img1.jpg",
+    image: "/img2.png",
     cta: "SHOP NOW",
     link: "/products",
   },
@@ -118,14 +123,38 @@ const FEATURED_TECH = [
 ];
 
 const CATEGORIES = [
-  { name: "Laptops", image: "/img2.png", slug: "laptops" },
-  { name: "Components", image: "/img2.png", slug: "components" },
-  { name: "Gaming", image: "/img2.png", slug: "gaming" },
-  { name: "Accessories", image: "/img2.png", slug: "accessories" },
+  {
+    name: "Laptops",
+    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80",
+    slug: "laptops",
+    description: "High-performance computing"
+  },
+  {
+    name: "Smartphones",
+    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80",
+    slug: "smartphones",
+    description: "Latest mobile technology"
+  },
+  {
+    name: "Components",
+    image: "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=800&q=80",
+    slug: "components",
+    description: "Build your dream PC"
+  },
+  {
+    name: "Watches",
+    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
+    slug: "watches",
+    description: "Premium timepieces"
+  },
 ];
 
 const Home = () => {
+  const dispatch = useDispatch();
   const { authUser } = useSelector((state) => state.auth);
+  const { newProducts, topRatedProducts, loading, totalProducts } = useSelector(
+    (state) => state.product
+  );
   const navigate = useNavigate();
 
   // Hero Slider State
@@ -138,6 +167,11 @@ const Home = () => {
   // Auth Modal State
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [intendedDestination, setIntendedDestination] = useState("");
+
+  // Fetch products on component mount
+  useEffect(() => {
+    dispatch(fetchAllProducts());
+  }, [dispatch]);
 
   // Auto-advance slider
   useEffect(() => {
@@ -162,17 +196,6 @@ const Home = () => {
     setCurrentSlide(index);
   };
 
-  // Filter products for New Arrivals (last 30 days, max 8)
-  const newArrivals = FEATURED_TECH.filter((product) => {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    return product.createdAt >= thirtyDaysAgo;
-  }).slice(0, 8);
-
-  // Filter products for Top Rated (4.5+ rating)
-  const topRatedProducts = FEATURED_TECH.filter(
-    (product) => product.rating >= 4.5
-  ).slice(0, 8);
-
   const handleCategoryClick = (categorySlug) => {
     if (!authUser) {
       setIntendedDestination(`/products?category=${categorySlug}`);
@@ -196,7 +219,7 @@ const Home = () => {
 
   // Product slider navigation
   const nextNewArrivals = () => {
-    if (newArrivalsIndex < newArrivals.length - 4) {
+    if (newArrivalsIndex < (newProducts?.length || 0) - 4) {
       setNewArrivalsIndex(newArrivalsIndex + 1);
     }
   };
@@ -208,7 +231,7 @@ const Home = () => {
   };
 
   const nextTopRated = () => {
-    if (topRatedIndex < topRatedProducts.length - 4) {
+    if (topRatedIndex < (topRatedProducts?.length || 0) - 4) {
       setTopRatedIndex(topRatedIndex + 1);
     }
   };
@@ -264,292 +287,287 @@ const Home = () => {
       )}
 
       {/* 1. HERO SECTION WITH SLIDER */}
-      <section className="bg-white border-b border-black relative overflow-hidden">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 pt-12 lg:pt-24 pb-24">
-          {/* Slider Container */}
-          <div className="relative">
-            {/* Slides */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[600px]">
-              {/* Content Side */}
-              <div className="space-y-8 z-10 relative">
-                {/* Slide Number Indicator */}
-                <div className="absolute -top-8 left-0 text-7xl font-black text-black/5">
+      <section className="relative overflow-hidden h-[100vh] min-h-[700px]">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img
+            src={HERO_SLIDES[currentSlide].image}
+            alt={HERO_SLIDES[currentSlide].title}
+            className="w-full h-full object-cover transition-all duration-1000"
+          />
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-black/70"></div>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 h-full flex items-center">
+          <div className="max-w-[1440px] mx-auto px-6 lg:px-12 w-full">
+            <div className="max-w-3xl">
+              {/* Slide Number */}
+              <div className="flex items-center gap-4 mb-8">
+                <div className="text-white/40 text-sm font-black">
                   0{currentSlide + 1}
                 </div>
-
-                <h1 className="text-5xl lg:text-[80px] leading-[0.95] font-heading font-black text-black tracking-tighter uppercase">
-                  {HERO_SLIDES[currentSlide].title}
-                </h1>
-                <p className="text-black/60 text-base lg:text-xl max-w-md leading-relaxed">
-                  {HERO_SLIDES[currentSlide].subtitle}
-                </p>
-
-                <div className="flex flex-wrap gap-4 pt-4">
-                  <Link
-                    to={HERO_SLIDES[currentSlide].link}
-                    onClick={handleProtectedNavigation}
-                  >
-                    <Button className="gap-2 bg-black text-white border-2 border-black hover:bg-white hover:text-black transition-all px-10 py-6 text-base font-bold">
-                      {HERO_SLIDES[currentSlide].cta}
-                      <ChevronRight className="w-5 h-5" />
-                    </Button>
-                  </Link>
-                </div>
-
-                {/* Stats */}
-                <div className="flex items-center gap-12 pt-8 border-t-2 border-black/10">
-                  <div>
-                    <h3 className="text-5xl font-black text-black mb-1">10+</h3>
-                    <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
-                      Brands
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-5xl font-black text-black mb-1">
-                      100+
-                    </h3>
-                    <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
-                      Products
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-5xl font-black text-black mb-1">
-                      24/7
-                    </h3>
-                    <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
-                      Support
-                    </p>
-                  </div>
-                </div>
-
-                {/* Slider Controls - Desktop Position */}
-                <div className="hidden lg:flex items-center gap-4 pt-8">
-                  {/* Previous Button */}
-                  <button
-                    onClick={prevSlide}
-                    className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110"
-                    aria-label="Previous slide"
-                  >
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-
-                  {/* Dots */}
-                  <div className="flex gap-3">
-                    {HERO_SLIDES.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => goToSlide(index)}
-                        className={`h-2 rounded-full transition-all ${
-                          index === currentSlide
-                            ? "w-12 bg-black"
-                            : "w-2 bg-black/30 hover:bg-black/50 hover:w-4"
-                        }`}
-                        aria-label={`Go to slide ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    onClick={nextSlide}
-                    className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110"
-                    aria-label="Next slide"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
+                <div className="w-16 h-px bg-white/20"></div>
+                <div className="text-white/40 text-sm font-black">
+                  0{HERO_SLIDES.length}
                 </div>
               </div>
 
-              {/* Image Side - Clickable to navigate to products */}
-              <Link
-                to={HERO_SLIDES[currentSlide].link}
-                onClick={handleProtectedNavigation}
-                className="relative flex items-center justify-center cursor-pointer group order-first lg:order-last"
-              >
-                {/* Decorative Background Elements */}
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-transparent opacity-50 rounded-3xl transform rotate-3"></div>
-                <div className="absolute inset-0 bg-gradient-to-tl from-gray-100 to-transparent opacity-30 rounded-3xl transform -rotate-3"></div>
+              {/* Main Title */}
+              <h1 className="text-6xl lg:text-8xl xl:text-9xl font-black text-white tracking-tighter uppercase leading-[0.9] mb-8">
+                {HERO_SLIDES[currentSlide].title}
+              </h1>
 
-                {/* Product Image */}
-                <img
-                  src={HERO_SLIDES[currentSlide].image}
-                  alt="Featured Tech"
-                  className="relative w-full h-auto object-contain grayscale group-hover:grayscale-0 transition-all duration-700 transform group-hover:scale-105 z-10"
-                />
+              {/* Subtitle */}
+              <p className="text-xl lg:text-2xl text-white/80 mb-12 max-w-2xl leading-relaxed">
+                {HERO_SLIDES[currentSlide].subtitle}
+              </p>
 
-                {/* Badge */}
-                <div className="absolute top-4 right-4 bg-black text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider z-20">
-                  NEW
-                </div>
-              </Link>
-            </div>
-
-            {/* Slider Controls - Mobile Position */}
-            <div className="flex lg:hidden items-center justify-center gap-4 mt-8">
-              {/* Previous Button */}
-              <button
-                onClick={prevSlide}
-                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition"
-                aria-label="Previous slide"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              {/* Dots */}
-              <div className="flex gap-2">
-                {HERO_SLIDES.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToSlide(index)}
-                    className={`h-2 rounded-full transition-all ${
-                      index === currentSlide
-                        ? "w-8 bg-black"
-                        : "w-2 bg-black/30 hover:bg-black/50"
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap gap-4 mb-16">
+                <Link
+                  to={HERO_SLIDES[currentSlide].link}
+                  onClick={handleProtectedNavigation}
+                  className="group inline-flex items-center gap-3 bg-white text-black px-10 py-5 rounded-full hover:bg-black hover:text-white border-2 border-white transition-all font-bold uppercase tracking-wider"
+                >
+                  {HERO_SLIDES[currentSlide].cta}
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  to="/products"
+                  onClick={handleProtectedNavigation}
+                  className="inline-flex items-center gap-3 bg-transparent text-white px-10 py-5 rounded-full border-2 border-white hover:bg-white hover:text-black transition-all font-bold uppercase tracking-wider"
+                >
+                  View All Products
+                </Link>
               </div>
 
-              {/* Next Button */}
-              <button
-                onClick={nextSlide}
-                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition"
-                aria-label="Next slide"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+              {/* Stats */}
+              <div className="flex items-center gap-12 pt-8 border-t-2 border-white/20">
+                <div>
+                  <h3 className="text-5xl font-black text-white mb-2">
+                    {totalProducts || 0}+
+                  </h3>
+                  <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
+                    Products
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-5xl font-black text-white mb-2">
+                    24/7
+                  </h3>
+                  <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
+                    Support
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-5xl font-black text-white mb-2">
+                    100%
+                  </h3>
+                  <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
+                    Secure
+                  </p>
+                </div>
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Slider Navigation */}
+        <div className="absolute bottom-12 right-12 z-20 flex items-center gap-4">
+          <button
+            onClick={prevSlide}
+            className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20 flex items-center justify-center hover:bg-white hover:text-black transition-all"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          <div className="flex gap-2">
+            {HERO_SLIDES.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`h-2 rounded-full transition-all ${index === currentSlide
+                    ? "w-12 bg-white"
+                    : "w-2 bg-white/30 hover:bg-white/60"
+                  }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={nextSlide}
+            className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20 flex items-center justify-center hover:bg-white hover:text-black transition-all"
+            aria-label="Next slide"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-12 left-12 z-20 flex flex-col items-center gap-3">
+          <span className="text-white/60 text-xs font-bold uppercase tracking-wider transform -rotate-90 origin-center translate-x-4">
+            Scroll
+          </span>
+          <div className="w-px h-16 bg-white/20 relative overflow-hidden">
+            <div className="w-full h-8 bg-white/60 animate-pulse"></div>
           </div>
         </div>
       </section>
 
-      {/* 2. CATEGORIES - Clickable to filter products */}
-      <section className="py-24 bg-black text-white">
-        <div className="max-w-[1440px] mx-auto px-6">
-          <h2 className="text-5xl font-black tracking-tighter uppercase mb-16">
-            Shop by Category
+      {/* 2. NEW ARRIVALS - Products from last 30 days (max 8) */}
+      <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto">
+        <div className="mb-16">
+          <h2 className="text-5xl font-black tracking-tighter uppercase">
+            New Arrivals
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        </div>
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+          </div>
+        ) : newProducts && newProducts.length > 0 ? (
+          /* Scrollable Slider Container */
+          <div className="overflow-x-auto">
+            <div className="flex gap-10 pb-4">
+              {newProducts.map((product) => {
+                // Parse images if it's a string
+                const images =
+                  typeof product.images === "string"
+                    ? JSON.parse(product.images)
+                    : product.images;
+                const productImage =
+                  images && images.length > 0 ? images[0].url : "/img2.png";
+
+                return (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.id}`}
+                    onClick={handleProtectedNavigation}
+                    className="group border-b-2 border-transparent hover:border-black transition-all pb-6 flex-shrink-0 snap-start"
+                    style={{ width: "300px" }}
+                  >
+                    <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4 relative">
+                      <img
+                        src={productImage}
+                        alt={product.name}
+                        className={`w-full h-full object-contain transition-all duration-500 ${product.stock === 0 ? "grayscale" : ""
+                          }`}
+                      />
+                      <StockBadge stock={product.stock || 0} />
+                    </div>
+                    <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight line-clamp-2">
+                      {product.name}
+                    </h3>
+                    <div className="space-y-1 mb-4">
+                      <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
+                        — {product.category}
+                      </p>
+                    </div>
+                    {/* Rating Stars */}
+                    <div className="flex items-center gap-1 mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${i < Math.floor(product.ratings || 0)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                            }`}
+                        />
+                      ))}
+                      <span className="text-sm text-black/60 ml-1">
+                        ({product.ratings ? Number(product.ratings).toFixed(1) : "0.0"})
+                      </span>
+                      {product.review_count && (
+                        <span className="text-xs text-black/40 ml-1">
+                          ({product.review_count} reviews)
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-black">
+                        {formatPrice(product.price)}
+                      </span>
+                      <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
+                        <ShoppingBag className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-xl text-black/60">No new arrivals at the moment</p>
+          </div>
+        )}
+      </section>
+
+      {/* 3. CATEGORIES - Clickable to filter products */}
+      <section className="py-24 bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,.1) 35px, rgba(255,255,255,.1) 70px)',
+          }}></div>
+        </div>
+
+        <div className="max-w-[1440px] mx-auto px-6 relative z-10">
+          <div className="text-center mb-12">
+            <h2 className="text-5xl lg:text-6xl font-black tracking-tighter uppercase mb-3">
+              Shop by Category
+            </h2>
+            <p className="text-lg text-white/70 max-w-2xl mx-auto">
+              Explore our curated collections of premium tech products
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {CATEGORIES.map((cat, i) => (
               <button
                 key={i}
                 onClick={() => handleCategoryClick(cat.slug)}
-                className="relative h-[300px] overflow-hidden group cursor-pointer border border-white/20 hover:border-white transition-all"
+                className="relative h-[280px] overflow-hidden group cursor-pointer rounded-xl border-2 border-white/10 hover:border-white/40 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl"
               >
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  className="w-full h-full object-cover grayscale opacity-50 group-hover:scale-105 group-hover:opacity-100 transition duration-700"
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-transparent transition">
-                  <h3 className="text-3xl font-black uppercase tracking-tighter">
+                {/* Image Background */}
+                <div className="absolute inset-0">
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                  />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500"></div>
+                </div>
+
+                {/* Content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-end p-6 text-center">
+                  {/* Category Name */}
+                  <h3 className="text-2xl font-black uppercase tracking-tighter mb-2 transform group-hover:-translate-y-1 transition-transform duration-500">
                     {cat.name}
                   </h3>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* 3. NEW ARRIVALS - Products from last 30 days (max 8) */}
-      <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto">
-        <div className="flex items-end justify-between mb-16">
-          <h2 className="text-5xl font-black tracking-tighter uppercase">
-            New Arrivals
-          </h2>
-          <div className="flex items-center gap-4">
-            {/* Navigation Buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={prevNewArrivals}
-                disabled={newArrivalsIndex === 0}
-                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
-                aria-label="Previous products"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={nextNewArrivals}
-                disabled={newArrivalsIndex >= newArrivals.length - 4}
-                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
-                aria-label="Next products"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-            <Link
-              to="/products?sort=newest"
-              onClick={handleProtectedNavigation}
-              className="font-bold border-b-2 border-black pb-1 hover:opacity-50 transition"
-            >
-              VIEW ALL
-            </Link>
-          </div>
-        </div>
+                  {/* Description */}
+                  <p className="text-xs text-white/80 mb-3 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+                    {cat.description}
+                  </p>
 
-        {/* Slider Container */}
-        <div className="relative overflow-hidden">
-          <div
-            className="flex transition-transform duration-500 ease-out gap-10"
-            style={{
-              transform: `translateX(-${newArrivalsIndex * (100 / 4)}%)`,
-            }}
-          >
-            {newArrivals.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                onClick={handleProtectedNavigation}
-                className="group border-b-2 border-transparent hover:border-black transition-all pb-6 flex-shrink-0"
-                style={{ width: "calc(25% - 30px)" }}
-              >
-                <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
-                  />
+                  {/* Arrow */}
+                  <div className="flex items-center gap-2 text-xs font-bold opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-500 delay-75">
+                    <span>EXPLORE</span>
+                    <ArrowRight className="w-3 h-3 animate-pulse" />
+                  </div>
                 </div>
-                <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight">
-                  {product.name}
-                </h3>
-                <div className="space-y-1 mb-4">
-                  {product.specs.map((spec, i) => (
-                    <p
-                      key={i}
-                      className="text-[11px] text-black/50 font-medium uppercase tracking-wider"
-                    >
-                      — {spec}
-                    </p>
-                  ))}
-                </div>
-                {/* Rating Stars */}
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < Math.floor(product.rating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="text-sm text-black/60 ml-1">
-                    ({product.rating})
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black">
-                    {formatPrice(product.price)}
-                  </span>
-                  <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
-                    <ShoppingBag className="w-5 h-5" />
-                  </button>
-                </div>
-              </Link>
+
+                {/* Corner Accent */}
+                <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 transform translate-x-10 -translate-y-10 rotate-45 group-hover:translate-x-8 group-hover:-translate-y-8 transition-transform duration-500"></div>
+              </button>
             ))}
           </div>
         </div>
@@ -557,104 +575,95 @@ const Home = () => {
 
       {/* 4. TOP RATED PRODUCTS - Rating 4.5 or higher */}
       <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto bg-gray-50">
-        <div className="flex items-end justify-between mb-16">
+        <div className="mb-16">
           <h2 className="text-5xl font-black tracking-tighter uppercase">
             Top Rated Products
           </h2>
-          <div className="flex items-center gap-4">
-            {/* Navigation Buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={prevTopRated}
-                disabled={topRatedIndex === 0}
-                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
-                aria-label="Previous products"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={nextTopRated}
-                disabled={topRatedIndex >= topRatedProducts.length - 4}
-                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
-                aria-label="Next products"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-            <Link
-              to="/products?sort=rating"
-              onClick={handleProtectedNavigation}
-              className="font-bold border-b-2 border-black pb-1 hover:opacity-50 transition"
-            >
-              VIEW ALL
-            </Link>
-          </div>
         </div>
 
-        {/* Slider Container */}
-        <div className="relative overflow-hidden">
-          <div
-            className="flex transition-transform duration-500 ease-out gap-10"
-            style={{
-              transform: `translateX(-${topRatedIndex * (100 / 4)}%)`,
-            }}
-          >
-            {topRatedProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                onClick={handleProtectedNavigation}
-                className="group border-b-2 border-transparent hover:border-black transition-all pb-6 bg-white p-6 rounded-lg flex-shrink-0"
-                style={{ width: "calc(25% - 30px)" }}
-              >
-                <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
-                  />
-                </div>
-                <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight">
-                  {product.name}
-                </h3>
-                <div className="space-y-1 mb-4">
-                  {product.specs.map((spec, i) => (
-                    <p
-                      key={i}
-                      className="text-[11px] text-black/50 font-medium uppercase tracking-wider"
-                    >
-                      — {spec}
-                    </p>
-                  ))}
-                </div>
-                {/* Rating Stars - Prominent for top rated */}
-                <div className="flex items-center gap-1 mb-4 bg-yellow-50 p-2 rounded">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        i < Math.floor(product.rating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="text-sm font-bold text-black ml-1">
-                    {product.rating} / 5
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black">
-                    {formatPrice(product.price)}
-                  </span>
-                  <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
-                    <ShoppingBag className="w-5 h-5" />
-                  </button>
-                </div>
-              </Link>
-            ))}
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
           </div>
-        </div>
+        ) : topRatedProducts && topRatedProducts.length > 0 ? (
+          /* Scrollable Slider Container */
+          <div className="overflow-x-auto">
+            <div className="flex gap-10 pb-4">
+              {topRatedProducts.map((product) => {
+                // Parse images if it's a string
+                const images =
+                  typeof product.images === "string"
+                    ? JSON.parse(product.images)
+                    : product.images;
+                const productImage =
+                  images && images.length > 0 ? images[0].url : "/img2.png";
+
+                return (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.id}`}
+                    onClick={handleProtectedNavigation}
+                    className="group border-b-2 border-transparent hover:border-black transition-all pb-6 bg-white p-6 rounded-lg flex-shrink-0 snap-start"
+                    style={{ width: "300px" }}
+                  >
+                    <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
+                      <img
+                        src={productImage}
+                        alt={product.name}
+                        className={`w-full h-full object-contain transition-all duration-500 ${product.stock === 0 ? "grayscale" : ""
+                          }`}
+                      />
+                    </div>
+                    <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight line-clamp-2">
+                      {product.name}
+                    </h3>
+                    <div className="space-y-1 mb-4">
+                      <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
+                        — {product.category}
+                      </p>
+                      <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
+                        — Stock: {product.stock}
+                      </p>
+                    </div>
+                    {/* Rating Stars - Prominent for top rated */}
+                    <div className="flex items-center gap-1 mb-4 bg-yellow-50 p-2 rounded">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-5 h-5 ${i < Math.floor(product.ratings || 0)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                            }`}
+                        />
+                      ))}
+                      <span className="text-sm font-bold text-black ml-1">
+                        {product.ratings ? Number(product.ratings).toFixed(1) : "0.0"} / 5
+                      </span>
+                    </div>
+                    {product.review_count && (
+                      <p className="text-xs text-black/50 mb-3">
+                        {product.review_count} customer reviews
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-black">
+                        {formatPrice(product.price)}
+                      </span>
+                      <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition">
+                        <ShoppingBag className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-xl text-black/60">No top rated products available</p>
+          </div>
+        )}
       </section>
 
       {/* 5. TRUST FEATURES (Clean Grid) */}

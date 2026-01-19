@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { Minus, Plus, Star, Check, ChevronRight } from "lucide-react"; // Added Icons
+import { Minus, Plus, Star, Check, ChevronRight, SlidersHorizontal, X, Edit, Trash2 } from "lucide-react"; // Added Icons
+import StockBadge from "../components/ui/StockBadge";
 import { formatPrice } from "../utils/currencyFormatter";
 import {
   fetchSingleProduct,
   clearProductDetails,
+  postReview,
+  checkUserPurchase,
+  deleteReview,
 } from "../store/slices/productSlice";
+import { addToCart } from "../store/slices/cartSlice";
+import { toast } from "react-toastify";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -16,20 +22,31 @@ const ProductDetail = () => {
   // UI State
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [activeTab, setActiveTab] = useState("reviews"); // Default to reviews as per design emphasis
+
+  // Review State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [editingReview, setEditingReview] = useState(null);
+  const [userReview, setUserReview] = useState(null);
 
   // Data State
-  const { productDetails, loading } = useSelector((state) => state.product);
+  const { productDetails, loading, isPostingReview, hasPurchased, checkingPurchase, isReviewDeleting } = useSelector((state) => state.product);
+  const { authUser } = useSelector((state) => state.auth);
 
   // Fetch product details on mount
   useEffect(() => {
     if (id) {
       dispatch(fetchSingleProduct(id));
+      // Check if user is logged in and has purchased this product
+      if (authUser) {
+        dispatch(checkUserPurchase(id));
+      }
     }
     return () => {
       dispatch(clearProductDetails());
     };
-  }, [dispatch, id]);
+  }, [dispatch, id, authUser]);
 
   // Set initial image when product loads
   useEffect(() => {
@@ -37,6 +54,16 @@ const ProductDetail = () => {
       setSelectedImage(productDetails.images[0].url);
     }
   }, [productDetails]);
+
+  // Check if user has already reviewed this product
+  useEffect(() => {
+    if (productDetails?.reviews && authUser) {
+      const existingReview = productDetails.reviews.find(
+        (review) => review.reviewer?.id === authUser.id
+      );
+      setUserReview(existingReview || null);
+    }
+  }, [productDetails, authUser]);
 
   // Loading State
   if (loading) {
@@ -74,12 +101,62 @@ const ProductDetail = () => {
   // Price Logic - Parse string to number
   const displayPrice = parseFloat(product.price || 0);
 
+
+
+  // ... existing imports
+
   const handleAddToCart = () => {
-    console.log("Add to cart:", {
-      product,
-      quantity,
-    });
-    alert("Product added to cart!");
+    dispatch(
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: parseFloat(product.price),
+        quantity: quantity,
+        image: mainImage,
+        category: product.category,
+        stock: product.stock,
+      })
+    );
+    toast.success("Added to cart!");
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!comment.trim()) {
+      toast.error("Please write a comment");
+      return;
+    }
+
+    try {
+      await dispatch(postReview({ productId: id, rating, comment })).unwrap();
+      setShowReviewModal(false);
+      setEditingReview(null);
+      setComment("");
+      setRating(5);
+      // Refresh product data to show new review
+      dispatch(fetchSingleProduct(id));
+    } catch (error) {
+      console.error("Failed to post review:", error);
+    }
+  };
+
+  const handleEditReview = (review) => {
+    setEditingReview(review);
+    setRating(review.rating);
+    setComment(review.comment);
+    setShowReviewModal(true);
+  };
+
+  const handleDeleteReview = async (productId) => {
+    if (window.confirm("Are you sure you want to delete your review?")) {
+      try {
+        await dispatch(deleteReview(productId)).unwrap();
+        // Refresh product data to remove deleted review
+        dispatch(fetchSingleProduct(id));
+      } catch (error) {
+        console.error("Failed to delete review:", error);
+      }
+    }
   };
 
   return (
@@ -90,19 +167,19 @@ const ProductDetail = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {/* Breadcrumbs */}
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-          <span
-            className="cursor-pointer hover:text-black"
-            onClick={() => navigate("/")}
+          <Link
+            to="/"
+            className="cursor-pointer hover:text-black transition"
           >
             Home
-          </span>
+          </Link>
           <ChevronRight size={16} />
-          <span
-            className="cursor-pointer hover:text-black"
-            onClick={() => navigate("/products")}
+          <Link
+            to="/products"
+            className="cursor-pointer hover:text-black transition"
           >
             Shop
-          </span>
+          </Link>
           <ChevronRight size={16} />
           <span className="text-black font-medium truncate">
             {product.name}
@@ -117,29 +194,28 @@ const ProductDetail = () => {
             <div className="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible w-full lg:w-32 shrink-0">
               {product.images && product.images.length > 0
                 ? product.images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setSelectedImage(img.url)}
-                      className={`border rounded-[20px] overflow-hidden bg-[#F0EEED] h-32 w-full lg:h-40 flex items-center justify-center ${
-                        selectedImage === img.url
-                          ? "border-black"
-                          : "border-transparent"
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(img.url)}
+                    className={`border rounded-[20px] overflow-hidden bg-[#F0EEED] h-32 w-full lg:h-40 flex items-center justify-center ${selectedImage === img.url
+                      ? "border-black"
+                      : "border-transparent"
                       }`}
-                    >
-                      <img
-                        src={img.url}
-                        alt="thumbnail"
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))
+                  >
+                    <img
+                      src={img.url}
+                      alt="thumbnail"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))
                 : // Placeholder thumbnails if no gallery
-                  [1, 2, 3].map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-[#F0EEED] rounded-[20px] h-32 lg:h-40 w-full"
-                    ></div>
-                  ))}
+                [1, 2, 3].map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-[#F0EEED] rounded-[20px] h-32 lg:h-40 w-full"
+                  ></div>
+                ))}
             </div>
 
             {/* Main Image */}
@@ -149,6 +225,9 @@ const ProductDetail = () => {
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
+              <div className="absolute top-4 left-4 z-10">
+                {product && <StockBadge stock={product.stock} />}
+              </div>
             </div>
           </div>
 
@@ -206,7 +285,7 @@ const ProductDetail = () => {
             <div className="mb-6 pb-6 border-b border-gray-200">
               {product.stock > 0 ? (
                 <p className="text-green-600 font-medium">
-                  ✓ In Stock - {product.stock} units available
+                  ✓ In Stock
                 </p>
               ) : (
                 <p className="text-red-600 font-medium">✗ Out of Stock</p>
@@ -286,42 +365,11 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Tabbed Content Section (Reviews) */}
-        <div className="mt-16">
-          {/* Tabs Header */}
-          <div className="flex border-b border-gray-200 mb-8">
-            {["Product Details", "Rating & Reviews", "FAQs"].map((tab) => {
-              const key = tab.toLowerCase().replace(/ & /g, "-").split(" ")[0]; // basic key logic
-              const isActive =
-                activeTab.includes(key) ||
-                (tab === "Rating & Reviews" && activeTab === "reviews");
+        {/* Horizontal Divider */}
+        <div className="border-t border-gray-200 mt-12 mb-8"></div>
 
-              return (
-                <button
-                  key={tab}
-                  onClick={() =>
-                    setActiveTab(
-                      key === "product"
-                        ? "details"
-                        : key === "rating"
-                        ? "reviews"
-                        : "faqs"
-                    )
-                  }
-                  className={`flex-1 pb-4 text-lg font-medium transition-colors relative ${
-                    isActive ? "text-black" : "text-gray-400"
-                  }`}
-                >
-                  {tab}
-                  {isActive && (
-                    <div className="absolute bottom-0 left-0 w-full h-[2px] bg-black"></div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Tab Content (Reviews View) */}
+        {/* Reviews Section (Formerly Tabs) */}
+        <div className="mt-8">
           <div className="py-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold flex items-center gap-2">
@@ -331,21 +379,39 @@ const ProductDetail = () => {
                 </span>
               </h3>
               <div className="flex gap-2">
-                <button className="bg-[#F0F0F0] hover:bg-gray-200 rounded-full w-12 h-12 flex items-center justify-center">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M3 6h18M7 12h10M10 18h4" />
-                  </svg>
-                </button>
-                <button className="bg-black text-white px-6 py-3 rounded-full font-medium text-sm">
-                  Write a Review
-                </button>
+                {authUser && hasPurchased && userReview && (
+                  <button
+                    onClick={() => {
+                      setEditingReview(userReview);
+                      setRating(userReview.rating);
+                      setComment(userReview.comment);
+                      setShowReviewModal(true);
+                    }}
+                    className="bg-green-600 text-white px-6 py-3 rounded-full font-medium text-sm hover:bg-green-700 transition flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    Edit Your Review
+                  </button>
+                )}
+                {authUser && hasPurchased && !userReview && (
+                  <button
+                    onClick={() => setShowReviewModal(true)}
+                    className="bg-black text-white px-6 py-3 rounded-full font-medium text-sm hover:bg-gray-800 transition">
+                    Write a Review
+                  </button>
+                )}
+                {authUser && !hasPurchased && !checkingPurchase && (
+                  <div className="bg-gray-100 text-gray-500 px-6 py-3 rounded-full font-medium text-sm cursor-not-allowed flex items-center gap-2">
+                    <span className="text-xs">🔒</span>
+                    Purchase to Review
+                  </div>
+                )}
+                {!authUser && (
+                  <button
+                    onClick={() => navigate('/auth/login')}
+                    className="bg-gray-100 text-black px-6 py-3 rounded-full font-medium text-sm hover:bg-gray-200 transition">
+                    Login to Review
+                  </button>
+                )}
               </div>
             </div>
 
@@ -355,7 +421,7 @@ const ProductDetail = () => {
                 product.reviews.map((review, i) => (
                   <div
                     key={review.review_id || i}
-                    className="border border-gray-200 rounded-[20px] p-6 lg:p-8"
+                    className="border border-gray-200 rounded-[20px] p-6 lg:p-8 relative"
                   >
                     <div className="flex justify-between mb-3">
                       <div className="flex text-yellow-400 gap-1">
@@ -374,17 +440,60 @@ const ProductDetail = () => {
                           />
                         ))}
                       </div>
+
+                      {/* Edit and Delete Buttons */}
+                      {authUser && review.reviewer?.id === authUser.id && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditReview(review)}
+                            className="p-2 hover:bg-gray-100 rounded-full transition"
+                            title="Edit review"
+                          >
+                            <Edit className="w-4 h-4 text-gray-600" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReview(id)}
+                            disabled={isReviewDeleting}
+                            className="p-2 hover:bg-red-50 rounded-full transition disabled:opacity-50"
+                            title="Delete review"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-bold text-lg">
-                        {review.reviewer?.name || "Anonymous"}
-                      </h4>
-                      <div className="bg-green-500 rounded-full p-[2px]">
-                        <Check size={10} className="text-white" />
+
+                    <div className="flex items-center gap-3 mb-3">
+                      {/* Avatar */}
+                      {review.reviewer?.avatar?.url ? (
+                        <img
+                          src={review.reviewer.avatar.url}
+                          alt={review.reviewer.name}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-lg">
+                          {review.reviewer?.name?.charAt(0).toUpperCase() || "A"}
+                        </div>
+                      )}
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-base">
+                            {review.reviewer?.name || "Anonymous"}
+                          </h4>
+                          <div className="bg-green-500 rounded-full p-[2px]">
+                            <Check size={10} className="text-white" />
+                          </div>
+                        </div>
                       </div>
                     </div>
+
                     <p className="text-gray-600 mb-4 text-sm leading-relaxed">
                       {review.comment}
+                    </p>
+                    <p className="text-gray-400 text-xs font-medium">
+                      Posted on {new Date().toLocaleDateString()}
                     </p>
                   </div>
                 ))
@@ -405,6 +514,69 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-lg w-full relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => {
+                setShowReviewModal(false);
+                setEditingReview(null);
+                setComment("");
+                setRating(5);
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-black transition"
+            >
+              <X size={24} />
+            </button>
+
+            <h2 className="text-2xl font-black uppercase mb-6">
+              {editingReview ? "Edit Review" : "Write a Review"}
+            </h2>
+
+            <form onSubmit={handleReviewSubmit}>
+              <div className="mb-6">
+                <label className="block text-sm font-bold uppercase mb-2">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className="transition-transform hover:scale-110"
+                    >
+                      <Star
+                        size={32}
+                        className={star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-bold uppercase mb-2">Your Review</label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share your experience with this product..."
+                  className="w-full h-32 p-4 rounded-xl border-2 border-gray-200 focus:border-black outline-none resize-none transition"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isPostingReview}
+                className="w-full bg-black text-white py-4 rounded-full font-bold uppercase hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPostingReview ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

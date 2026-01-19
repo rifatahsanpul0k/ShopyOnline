@@ -1,11 +1,11 @@
 import { axiosInstance as axios } from "../lib/axios.js";
 
-const API_URL = "/api/v1/orders";
+const API_URL = "/order";
 
 // Create a new order
 export const createOrderAPI = async (orderData) => {
   try {
-    const response = await axios.post(`${API_URL}/create`, orderData);
+    const response = await axios.post(`${API_URL}/new`, orderData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
@@ -15,7 +15,7 @@ export const createOrderAPI = async (orderData) => {
 // Get all orders for current user
 export const getUserOrdersAPI = async () => {
   try {
-    const response = await axios.get(`${API_URL}/my-orders`);
+    const response = await axios.get(`${API_URL}/me`);
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
@@ -68,6 +68,16 @@ export const updateOrderStatusAPI = async (orderId, status) => {
 export const getOrderStatsAPI = async () => {
   try {
     const response = await axios.get(`${API_URL}/stats/overview`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+// Delete an order (for users to delete their own delivered orders)
+export const deleteOrderAPI = async (orderId) => {
+  try {
+    const response = await axios.delete(`${API_URL}/${orderId}`);
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
