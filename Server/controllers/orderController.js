@@ -259,6 +259,7 @@ export const fetchAllOrders = catchAsyncErrors(async (req, res, next) => {
     SELECT o.*,
     u.name as user_name,
     u.email as user_email,
+    u.avatar as user_avatar,
     COALESCE(json_agg(
     json_build_object(
     'order_item_id', oi.id,

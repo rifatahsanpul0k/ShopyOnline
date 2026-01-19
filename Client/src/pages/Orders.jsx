@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import {
   ChevronRight,
@@ -15,11 +15,14 @@ import {
   ArrowLeft,
   Trash2,
   AlertTriangle,
+  Star,
+  Check,
 } from "lucide-react";
 import Button from "../components/ui/Button";
 import { getUserOrdersAPI, deleteOrderAPI } from "../services/ordersService.js";
 import { generateInvoicePDF } from "../utils/invoiceGenerator.js";
 import { toast } from "react-toastify";
+import { postReview, fetchSingleProduct } from "../store/slices/productSlice";
 
 // Dummy data for development/testing
 const DUMMY_ORDERS = [
@@ -181,7 +184,9 @@ const DUMMY_ORDERS = [
 
 const Orders = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { authUser } = useSelector((state) => state.auth);
+  const { isPostingReview } = useSelector((state) => state.product);
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -190,6 +195,13 @@ const Orders = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Review Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewProduct, setReviewProduct] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [productReviews, setProductReviews] = useState({});
 
   // Fetch orders from API
   useEffect(() => {
@@ -241,6 +253,32 @@ const Orders = () => {
         });
 
         setOrders(transformedOrders);
+
+        // Fetch reviews for all products in delivered orders
+        const deliveredOrders = transformedOrders.filter(o => o.status === 'delivered');
+        const reviewsMap = {};
+
+        for (const order of deliveredOrders) {
+          for (const item of order.items) {
+            if (item.id && !reviewsMap[item.id]) {
+              try {
+                const productResponse = await dispatch(fetchSingleProduct(item.id)).unwrap();
+                if (productResponse?.product?.reviews && authUser) {
+                  const userReview = productResponse.product.reviews.find(
+                    review => review.reviewer?.id === authUser.id
+                  );
+                  if (userReview) {
+                    reviewsMap[item.id] = userReview;
+                  }
+                }
+              } catch (error) {
+                console.error(`Error fetching reviews for product ${item.id}:`, error);
+              }
+            }
+          }
+        }
+
+        setProductReviews(reviewsMap);
       } catch (err) {
         console.error("Error fetching orders:", err);
         setOrders([]);
@@ -337,6 +375,37 @@ const Orders = () => {
   const handleCloseModal = () => {
     setIsDetailModalOpen(false);
     setTimeout(() => setSelectedOrder(null), 300);
+  };
+
+  // Handle review submit
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!comment.trim()) {
+      toast.error("Please write a comment");
+      return;
+    }
+
+    try {
+      await dispatch(postReview({
+        productId: reviewProduct.id,
+        rating,
+        comment
+      })).unwrap();
+
+      // Update productReviews state with the new/updated review
+      setProductReviews(prev => ({
+        ...prev,
+        [reviewProduct.id]: { rating, comment, reviewer: { id: authUser.id } }
+      }));
+
+      setShowReviewModal(false);
+      setReviewProduct(null);
+      setComment("");
+      setRating(5);
+      toast.success(productReviews[reviewProduct.id] ? "Review updated successfully!" : "Review submitted successfully!");
+    } catch (error) {
+      console.error("Failed to post review:", error);
+    }
   };
 
   // Handle delete order
@@ -498,23 +567,84 @@ const Orders = () => {
                           key={idx}
                           className="flex gap-4 pb-4 border-b border-gray-200 last:border-b-0 last:pb-0"
                         >
-                          {item.image && (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-20 h-20 rounded-card object-cover border border-gray-200"
-                            />
-                          )}
+                          <Link to={`/product/${item.id}`} className="shrink-0">
+                            {item.image && (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-20 h-20 rounded-card object-cover border border-gray-200 hover:opacity-80 transition"
+                              />
+                            )}
+                          </Link>
                           <div className="flex-1">
-                            <h4 className="font-semibold text-black line-clamp-2">
-                              {item.name}
-                            </h4>
+                            <Link to={`/product/${item.id}`}>
+                              <h4 className="font-semibold text-black line-clamp-2 hover:text-gray-600 transition cursor-pointer">
+                                {item.name}
+                              </h4>
+                            </Link>
                             <p className="text-gray-600 text-sm mt-1">
                               Qty: {item.quantity}
                             </p>
                             <p className="font-bold text-black mt-2">
                               ${(item.price * item.quantity).toFixed(2)}
                             </p>
+
+                            {/* Rate & Review Button for Delivered Orders */}
+                            {order.status === "delivered" && (
+                              <div>
+                                {productReviews[item.id] ? (
+                                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Check className="w-4 h-4 text-green-600" />
+                                      <span className="text-green-700 font-semibold text-sm">
+                                        You reviewed this product
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1 mb-1">
+                                      {[...Array(5)].map((_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={`w-3 h-3 ${i < productReviews[item.id].rating
+                                            ? "fill-yellow-400 text-yellow-400"
+                                            : "text-gray-300"
+                                            }`}
+                                        />
+                                      ))}
+                                      <span className="text-xs text-gray-600 ml-1">
+                                        {productReviews[item.id].rating}/5
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-gray-600 line-clamp-2">
+                                      {productReviews[item.id].comment}
+                                    </p>
+                                    <button
+                                      onClick={() => {
+                                        setReviewProduct(item);
+                                        setRating(productReviews[item.id].rating);
+                                        setComment(productReviews[item.id].comment);
+                                        setShowReviewModal(true);
+                                      }}
+                                      className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                    >
+                                      Edit Review
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setReviewProduct(item);
+                                      setRating(5);
+                                      setComment("");
+                                      setShowReviewModal(true);
+                                    }}
+                                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold text-sm rounded-full hover:from-yellow-500 hover:to-orange-600 transition-all transform hover:scale-105 shadow-md"
+                                  >
+                                    <Star className="w-4 h-4 fill-black" />
+                                    Rate & Review
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -785,6 +915,70 @@ const Orders = () => {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {showReviewModal && reviewProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-lg w-full relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => {
+                setShowReviewModal(false);
+                setReviewProduct(null);
+                setComment("");
+                setRating(5);
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-black transition"
+            >
+              <X size={24} />
+            </button>
+
+            <h2 className="text-2xl font-black uppercase mb-2">
+              {productReviews[reviewProduct.id] ? "Edit Review" : "Rate & Review"}
+            </h2>
+            <p className="text-gray-600 mb-6">{reviewProduct.name}</p>
+
+            <form onSubmit={handleReviewSubmit}>
+              <div className="mb-6">
+                <label className="block text-sm font-bold uppercase mb-2">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className="transition-transform hover:scale-110"
+                    >
+                      <Star
+                        size={32}
+                        className={star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-bold uppercase mb-2">Your Review</label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share your experience with this product..."
+                  className="w-full h-32 p-4 rounded-xl border-2 border-gray-200 focus:border-black outline-none resize-none transition"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isPostingReview}
+                className="w-full bg-black text-white py-4 rounded-full font-bold uppercase hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPostingReview ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
           </div>
         </div>
       )}

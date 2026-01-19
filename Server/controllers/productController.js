@@ -310,6 +310,31 @@ export const fetchSingleProduct = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+// Check if user has purchased a product----->
+export const checkUserPurchase = catchAsyncErrors(async (req, res, next) => {
+  const { productId } = req.params;
+
+  const purchaseCheckQuery = `
+    SELECT oi.product_id
+    FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id
+    WHERE o.buyer_id = $1
+    AND oi.product_id = $2
+    AND o.order_status IN ('Processing', 'Shipped', 'Delivered')
+    LIMIT 1
+  `;
+
+  const { rows } = await database.query(purchaseCheckQuery, [
+    req.user.id,
+    productId,
+  ]);
+
+  res.status(200).json({
+    success: true,
+    hasPurchased: rows.length > 0,
+  });
+});
+
 // For posting a product review----->
 export const postProductReview = catchAsyncErrors(async (req, res, next) => {
   const { productId } = req.params;
@@ -325,10 +350,9 @@ export const postProductReview = catchAsyncErrors(async (req, res, next) => {
         SELECT oi.product_id
         FROM order_items oi
         JOIN orders o ON o.id = oi.order_id
-        JOIN payments p ON p.order_id = o.id
         WHERE o.buyer_id = $1
         AND oi.product_id = $2
-        AND p.payment_status = 'Paid'
+        AND o.order_status IN ('Processing', 'Shipped', 'Delivered')
         LIMIT 1
     `;
 
