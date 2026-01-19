@@ -25,7 +25,7 @@ const HERO_SLIDES = [
     id: 1,
     title: "TRUSTED BRANDS.",
     subtitle: "Precision engineered components. Uncompromising power.",
-    image: "/img1.jpg",
+    image: "/img2.png",
     cta: "SHOP NOW",
     link: "/products",
   },
@@ -287,156 +287,133 @@ const Home = () => {
       )}
 
       {/* 1. HERO SECTION WITH SLIDER */}
-      <section className="bg-white border-b border-black relative overflow-hidden">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 pt-12 lg:pt-24 pb-24">
-          {/* Slider Container */}
-          <div className="relative">
-            {/* Slides */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[600px]">
-              {/* Content Side */}
-              <div className="space-y-8 z-10 relative">
-                {/* Slide Number Indicator */}
-                <div className="absolute -top-8 left-0 text-7xl font-black text-black/5">
+      <section className="relative overflow-hidden h-[100vh] min-h-[700px]">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img
+            src={HERO_SLIDES[currentSlide].image}
+            alt={HERO_SLIDES[currentSlide].title}
+            className="w-full h-full object-cover transition-all duration-1000"
+          />
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-black/70"></div>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 h-full flex items-center">
+          <div className="max-w-[1440px] mx-auto px-6 lg:px-12 w-full">
+            <div className="max-w-3xl">
+              {/* Slide Number */}
+              <div className="flex items-center gap-4 mb-8">
+                <div className="text-white/40 text-sm font-black">
                   0{currentSlide + 1}
                 </div>
-
-                <h1 className="text-5xl lg:text-[80px] leading-[0.95] font-heading font-black text-black tracking-tighter uppercase">
-                  {HERO_SLIDES[currentSlide].title}
-                </h1>
-                <p className="text-black/60 text-base lg:text-xl max-w-md leading-relaxed">
-                  {HERO_SLIDES[currentSlide].subtitle}
-                </p>
-
-                {/* Hero Search Bar Removed */}
-
-                <div className="flex flex-wrap gap-4 pt-4">
-                  <Link
-                    to={HERO_SLIDES[currentSlide].link}
-                    onClick={handleProtectedNavigation}
-                  >
-                    <Button className="gap-2 bg-black text-white border-2 border-black hover:bg-white hover:text-black transition-all px-10 py-6 text-base font-bold">
-                      {HERO_SLIDES[currentSlide].cta}
-                      <ChevronRight className="w-5 h-5" />
-                    </Button>
-                  </Link>
-                </div>
-
-                {/* Stats */}
-                <div className="flex items-center gap-12 pt-8 border-t-2 border-black/10">
-                  <div>
-                    <h3 className="text-5xl font-black text-black mb-1">
-                      {totalProducts || 0}
-                    </h3>
-                    <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
-                      Products
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-5xl font-black text-black mb-1">
-                      24/7
-                    </h3>
-                    <p className="text-black/40 text-xs font-bold uppercase tracking-widest">
-                      Support
-                    </p>
-                  </div>
-                </div>
-
-                {/* Slider Controls - Desktop Position */}
-                <div className="hidden lg:flex items-center gap-4 pt-8">
-                  {/* Previous Button */}
-                  <button
-                    onClick={prevSlide}
-                    className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110"
-                    aria-label="Previous slide"
-                  >
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-
-                  {/* Dots */}
-                  <div className="flex gap-3">
-                    {HERO_SLIDES.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => goToSlide(index)}
-                        className={`h-2 rounded-full transition-all ${index === currentSlide
-                          ? "w-12 bg-black"
-                          : "w-2 bg-black/30 hover:bg-black/50 hover:w-4"
-                          }`}
-                        aria-label={`Go to slide ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    onClick={nextSlide}
-                    className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all hover:scale-110"
-                    aria-label="Next slide"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
+                <div className="w-16 h-px bg-white/20"></div>
+                <div className="text-white/40 text-sm font-black">
+                  0{HERO_SLIDES.length}
                 </div>
               </div>
 
-              {/* Image Side - Clickable to navigate to products */}
-              <Link
-                to={HERO_SLIDES[currentSlide].link}
-                onClick={handleProtectedNavigation}
-                className="relative flex items-center justify-center cursor-pointer group order-first lg:order-last"
-              >
-                {/* Decorative Background Elements */}
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-transparent opacity-50 rounded-3xl transform rotate-3"></div>
-                <div className="absolute inset-0 bg-gradient-to-tl from-gray-100 to-transparent opacity-30 rounded-3xl transform -rotate-3"></div>
+              {/* Main Title */}
+              <h1 className="text-6xl lg:text-8xl xl:text-9xl font-black text-white tracking-tighter uppercase leading-[0.9] mb-8">
+                {HERO_SLIDES[currentSlide].title}
+              </h1>
 
-                {/* Product Image */}
-                <img
-                  src={HERO_SLIDES[currentSlide].image}
-                  alt="Featured Tech"
-                  className="relative w-full h-auto object-contain transition-all duration-700 transform group-hover:scale-105 z-10"
-                />
+              {/* Subtitle */}
+              <p className="text-xl lg:text-2xl text-white/80 mb-12 max-w-2xl leading-relaxed">
+                {HERO_SLIDES[currentSlide].subtitle}
+              </p>
 
-                {/* Badge */}
-                <div className="absolute top-4 right-4 bg-black text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider z-20">
-                  NEW
-                </div>
-              </Link>
-            </div>
-
-            {/* Slider Controls - Mobile Position */}
-            <div className="flex lg:hidden items-center justify-center gap-4 mt-8">
-              {/* Previous Button */}
-              <button
-                onClick={prevSlide}
-                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition"
-                aria-label="Previous slide"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              {/* Dots */}
-              <div className="flex gap-2">
-                {HERO_SLIDES.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToSlide(index)}
-                    className={`h-2 rounded-full transition-all ${index === currentSlide
-                      ? "w-8 bg-black"
-                      : "w-2 bg-black/30 hover:bg-black/50"
-                      }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap gap-4 mb-16">
+                <Link
+                  to={HERO_SLIDES[currentSlide].link}
+                  onClick={handleProtectedNavigation}
+                  className="group inline-flex items-center gap-3 bg-white text-black px-10 py-5 rounded-full hover:bg-black hover:text-white border-2 border-white transition-all font-bold uppercase tracking-wider"
+                >
+                  {HERO_SLIDES[currentSlide].cta}
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  to="/products"
+                  onClick={handleProtectedNavigation}
+                  className="inline-flex items-center gap-3 bg-transparent text-white px-10 py-5 rounded-full border-2 border-white hover:bg-white hover:text-black transition-all font-bold uppercase tracking-wider"
+                >
+                  View All Products
+                </Link>
               </div>
 
-              {/* Next Button */}
-              <button
-                onClick={nextSlide}
-                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition"
-                aria-label="Next slide"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+              {/* Stats */}
+              <div className="flex items-center gap-12 pt-8 border-t-2 border-white/20">
+                <div>
+                  <h3 className="text-5xl font-black text-white mb-2">
+                    {totalProducts || 0}+
+                  </h3>
+                  <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
+                    Products
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-5xl font-black text-white mb-2">
+                    24/7
+                  </h3>
+                  <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
+                    Support
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-5xl font-black text-white mb-2">
+                    100%
+                  </h3>
+                  <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
+                    Secure
+                  </p>
+                </div>
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Slider Navigation */}
+        <div className="absolute bottom-12 right-12 z-20 flex items-center gap-4">
+          <button
+            onClick={prevSlide}
+            className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20 flex items-center justify-center hover:bg-white hover:text-black transition-all"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          <div className="flex gap-2">
+            {HERO_SLIDES.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`h-2 rounded-full transition-all ${index === currentSlide
+                    ? "w-12 bg-white"
+                    : "w-2 bg-white/30 hover:bg-white/60"
+                  }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={nextSlide}
+            className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20 flex items-center justify-center hover:bg-white hover:text-black transition-all"
+            aria-label="Next slide"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-12 left-12 z-20 flex flex-col items-center gap-3">
+          <span className="text-white/60 text-xs font-bold uppercase tracking-wider transform -rotate-90 origin-center translate-x-4">
+            Scroll
+          </span>
+          <div className="w-px h-16 bg-white/20 relative overflow-hidden">
+            <div className="w-full h-8 bg-white/60 animate-pulse"></div>
           </div>
         </div>
       </section>
