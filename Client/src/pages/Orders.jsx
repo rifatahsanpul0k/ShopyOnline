@@ -705,25 +705,25 @@ const Orders = () => {
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 {selectedOrder.status === "delivered" && (
-                  <>
-                    <button
-                      onClick={() => {
-                        generateInvoicePDF(selectedOrder, authUser);
-                        handleCloseModal();
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-black text-black font-bold rounded-pill hover:bg-gray-100 transition"
-                    >
-                      <Download className="w-4 h-4" />
-                      Download Invoice
-                    </button>
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-red-500 text-red-500 font-bold rounded-pill hover:bg-red-50 transition"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete Order
-                    </button>
-                  </>
+                  <button
+                    onClick={() => {
+                      generateInvoicePDF(selectedOrder, authUser);
+                      handleCloseModal();
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-black text-black font-bold rounded-pill hover:bg-gray-100 transition"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Invoice
+                  </button>
+                )}
+                {(selectedOrder.status === "delivered" || selectedOrder.status === "cancelled") && (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-red-500 text-red-500 font-bold rounded-pill hover:bg-red-50 transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Order
+                  </button>
                 )}
                 <button
                   onClick={handleCloseModal}

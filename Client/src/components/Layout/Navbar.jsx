@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Search, ShoppingCart, User, Menu, X, LogOut } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/slices/authSlice";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -50,18 +51,21 @@ const Navbar = () => {
           <div className="flex items-center gap-4">
             {/* Only show cart button when user is logged in */}
             {authUser && (
-              <Link to="/cart" className="hover:text-gray-600 relative">
-                <ShoppingCart size={24} />
-                {/* Cart Counter Badge */}
-                {state.cart?.cart?.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
-                    {state.cart.cart.reduce(
-                      (total, item) => total + item.quantity,
-                      0
-                    )}
-                  </span>
-                )}
-              </Link>
+              <>
+                <NotificationBell />
+                <Link to="/cart" className="hover:text-gray-600 relative">
+                  <ShoppingCart size={24} />
+                  {/* Cart Counter Badge */}
+                  {state.cart?.cart?.length > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
+                      {state.cart.cart.reduce(
+                        (total, item) => total + item.quantity,
+                        0
+                      )}
+                    </span>
+                  )}
+                </Link>
+              </>
             )}
 
             {authUser ? (

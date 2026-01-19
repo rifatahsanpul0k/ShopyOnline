@@ -55,11 +55,18 @@ export const updatePaymentStatus = async (req, res) => {
             });
         }
 
-        // Also update order payment status
-        await database.query(
-            "UPDATE orders SET payment_status = $1 WHERE id = $2",
-            [paymentStatus, orderId]
-        );
+        // Also update order payment status and set paid_at timestamp if payment is successful
+        if (paymentStatus === "succeeded" || paymentStatus === "paid") {
+            await database.query(
+                "UPDATE orders SET payment_status = $1, paid_at = NOW() WHERE id = $2",
+                [paymentStatus, orderId]
+            );
+        } else {
+            await database.query(
+                "UPDATE orders SET payment_status = $1 WHERE id = $2",
+                [paymentStatus, orderId]
+            );
+        }
 
         return res.status(200).json({
             success: true,

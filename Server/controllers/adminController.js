@@ -107,7 +107,7 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
     // Order Status Counts
     const orderStatusCountsQuery = await database.query(`SELECT order_status, COUNT(*) FROM orders WHERE paid_at IS NOT NULL GROUP BY order_status`);
 
-    const orderStatusCounts = {Processing: 0, Shipped: 0, Delivered: 0, Cancelled: 0,};
+    const orderStatusCounts = { Processing: 0, Shipped: 0, Delivered: 0, Cancelled: 0, };
     orderStatusCountsQuery.rows.forEach((row) => {
         orderStatusCounts[row.order_status] = parseInt(row.count);
     });
@@ -133,7 +133,8 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
         `
     );
     const monthlySales = monthlySalesQuery.rows.map((row) => ({
-        month: row.month, totalsales: parseFloat(row.totalsales) || 0,})
+        month: row.month, totalsales: parseFloat(row.totalsales) || 0,
+    })
     );
 
     // Top 5 Best-Selling Products
@@ -191,6 +192,21 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
     const newUsersThisMonthQuery = await database.query(`SELECT COUNT(*) FROM users WHERE created_at >= $1 AND role = 'User'`, [currentMonthStart]);
     const newUsersThisMonth = parseInt(newUsersThisMonthQuery.rows[0].count) || 0;
 
+    // Total Orders This Month
+    const totalOrdersThisMonthQuery = await database.query(
+        `SELECT COUNT(*) FROM orders WHERE paid_at IS NOT NULL AND created_at BETWEEN $1 AND $2`,
+        [currentMonthStart, currentMonthEnd]
+    );
+    const totalOrdersThisMonth = parseInt(totalOrdersThisMonthQuery.rows[0].count) || 0;
+
+    // Total Products Count
+    const totalProductsCountQuery = await database.query(`SELECT COUNT(*) FROM products`);
+    const totalProductsCount = parseInt(totalProductsCountQuery.rows[0].count) || 0;
+
+    // New Products This Month
+    const newProductsThisMonthQuery = await database.query(`SELECT COUNT(*) FROM products WHERE created_at >= $1`, [currentMonthStart]);
+    const newProductsThisMonth = parseInt(newProductsThisMonthQuery.rows[0].count) || 0;
+
     // Send Response
     res.status(200).json({
         success: true,
@@ -206,5 +222,8 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
         lowStockProducts,
         revenueGrowth,
         newUsersThisMonth,
+        totalOrdersThisMonth,
+        totalProductsCount,
+        newProductsThisMonth,
     });
 });
