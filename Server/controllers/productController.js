@@ -170,7 +170,7 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
         WHERE p.created_at >= NOW() - INTERVAL '30 days'
         GROUP BY p.id
         ORDER BY p.created_at DESC
-        LIMIT 8
+        LIMIT 15
   `;
   const newProductsResult = await database.query(newProductsQuery);
 
@@ -183,7 +183,7 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
     WHERE p.ratings >= 4.5
     GROUP BY p.id
     ORDER BY p.ratings DESC, p.created_at DESC
-    LIMIT 8
+    LIMIT 15
   `;
   const topRatedResult = await database.query(topRatedQuery);
 
@@ -549,7 +549,7 @@ export const deleteReview = catchAsyncErrors(async (req, res, next) => {
 //             WHERE name ILIKE ANY($1)
 //             OR description ILIKE ANY($1)
 //             OR category ILIKE ANY($1)
-//             LIMIT 200;     
+//             LIMIT 200;
 //         `,[keywords]);
 
 //         const filteredProducts = result.rows;

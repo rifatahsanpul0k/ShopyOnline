@@ -94,4 +94,34 @@
   .Toastify__toast-icon>svg {
     fill: currentColor !important;
   }
+
+  /* Styled scrollbar for sliders */
+  .overflow-x-auto {
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: #000000 #f3f4f6;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 10px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #000000;
+    border-radius: 10px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #404040;
+  }
+
+  .snap-start {
+    scroll-snap-align: start;
+  }
 }
