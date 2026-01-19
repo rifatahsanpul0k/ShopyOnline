@@ -399,6 +399,20 @@ const Products = () => {
                 </button>
                 {expandedSections.category && (
                   <div className="space-y-2">
+                    <Link
+                      to="/products"
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition ${!categoryParam
+                        ? "bg-black text-white font-bold"
+                        : "bg-white hover:bg-black/5"
+                        }`}
+                    >
+                      <span className="text-sm font-medium">
+                        All Products
+                      </span>
+                      {!categoryParam && (
+                        <span className="ml-auto text-xs">✓</span>
+                      )}
+                    </Link>
                     {Object.entries(CATEGORY_FILTERS).map(([key, category]) => (
                       <Link
                         key={key}

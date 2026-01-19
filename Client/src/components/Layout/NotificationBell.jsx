@@ -74,6 +74,8 @@ const NotificationBell = () => {
                 return "👤";
             case "payment_placed":
                 return "💳";
+            case "order_status_update":
+                return "📦";
             default:
                 return "📢";
         }
@@ -85,6 +87,8 @@ const NotificationBell = () => {
                 return "bg-blue-50 border-l-4 border-blue-500";
             case "payment_placed":
                 return "bg-green-50 border-l-4 border-green-500";
+            case "order_status_update":
+                return "bg-purple-50 border-l-4 border-purple-500";
             default:
                 return "bg-gray-50 border-l-4 border-gray-500";
         }

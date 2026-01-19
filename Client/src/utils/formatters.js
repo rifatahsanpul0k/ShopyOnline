@@ -51,10 +51,13 @@ export const formatDate = (date) => {
   // Check if date is valid
   if (isNaN(dateObj.getTime())) return "Invalid Date";
 
-  // Format: Jan 15, 2026
-  return dateObj.toLocaleDateString("en-US", {
+  // Format: Jan 15, 2026, 10:30 AM
+  return dateObj.toLocaleString("en-US", {
     year: "numeric",
     month: "short",
-    day: "numeric"
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
   });
 };

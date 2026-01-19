@@ -11,6 +11,7 @@ export async function createOrdersTable() {
             order_status VARCHAR(50) DEFAULT 'Processing' CHECK (order_status IN ('Processing', 'Shipped', 'Delivered', 'Cancelled')),
             paid_at TIMESTAMP CHECK (paid_at IS NULL OR paid_at <= CURRENT_TIMESTAMP),
             deleted_by_user BOOLEAN DEFAULT false,
+            deleted_by_admin BOOLEAN DEFAULT false,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE
         );

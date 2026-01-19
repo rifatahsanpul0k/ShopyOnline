@@ -326,9 +326,17 @@ const AdminOrders = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
-                                                    {order.user_name?.charAt(0).toUpperCase() || "U"}
-                                                </div>
+                                                {order.user_avatar?.url ? (
+                                                    <img
+                                                        src={order.user_avatar.url}
+                                                        alt={order.user_name}
+                                                        className="h-8 w-8 rounded-full object-cover border border-gray-200"
+                                                    />
+                                                ) : (
+                                                    <div className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+                                                        {order.user_name?.charAt(0).toUpperCase() || "U"}
+                                                    </div>
+                                                )}
                                                 <div>
                                                     <p className="font-bold text-sm text-gray-900">{order.user_name}</p>
                                                     <p className="text-xs text-gray-500">{order.user_email}</p>
