@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { HelpCircle, Package, CreditCard, RefreshCw, Truck, Shield, Search, ChevronDown } from "lucide-react";
 
 const FAQ = () => {
@@ -162,78 +163,87 @@ const FAQ = () => {
             </section>
 
             {/* FAQ Categories */}
-            <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto">
-                {/* Category Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-16">
-                    {faqCategories.map((category, idx) => {
-                        const Icon = category.icon;
-                        return (
-                            <button
-                                key={idx}
-                                onClick={() => setOpenCategory(openCategory === idx ? null : idx)}
-                                className={`group p-6 rounded-2xl border-2 transition-all text-center ${openCategory === idx
-                                        ? 'bg-black text-white border-black'
-                                        : 'bg-white border-black/10 hover:border-black'
-                                    }`}
-                            >
-                                <Icon className={`w-8 h-8 mx-auto mb-3 ${openCategory === idx ? 'text-white' : 'text-black'}`} />
-                                <h3 className={`text-xs font-black uppercase tracking-wider ${openCategory === idx ? 'text-white' : 'text-black'
-                                    }`}>
-                                    {category.category}
-                                </h3>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* FAQ Accordions */}
-                <div className="space-y-12">
-                    {(searchQuery ? filteredCategories : openCategory !== null ? [faqCategories[openCategory]] : faqCategories).map((category, catIdx) => {
-                        const Icon = category.icon;
-                        const actualIdx = searchQuery ? faqCategories.findIndex(c => c.category === category.category) : (openCategory !== null ? openCategory : catIdx);
-
-                        return (
-                            <div key={catIdx} className="scroll-mt-24">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className={`bg-gradient-to-br ${category.color} text-white w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg`}>
-                                        <Icon className="w-8 h-8" />
+            <section className="py-24 px-6 lg:px-12 bg-gradient-to-br from-gray-50 via-white to-gray-50">
+                <div className="max-w-[1400px] mx-auto">
+                    {/* Category Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-20">
+                        {faqCategories.map((category, idx) => {
+                            const Icon = category.icon;
+                            return (
+                                <button
+                                    key={idx}
+                                    onClick={() => setOpenCategory(openCategory === idx ? null : idx)}
+                                    className={`group p-6 lg:p-8 rounded-3xl border-2 transition-all text-center transform hover:scale-105 hover:shadow-2xl ${openCategory === idx
+                                        ? 'bg-gradient-to-br from-black to-gray-900 text-white border-black shadow-2xl scale-105'
+                                        : 'bg-white border-black/10 hover:border-black/30 shadow-lg'
+                                        }`}
+                                >
+                                    <div className={`bg-gradient-to-br ${category.color} rounded-2xl w-12 h-12 lg:w-16 lg:h-16 flex items-center justify-center mx-auto mb-4 ${openCategory === idx ? 'shadow-lg' : ''}`}>
+                                        <Icon className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
                                     </div>
-                                    <div>
-                                        <h2 className="text-3xl lg:text-4xl font-black tracking-tighter uppercase">
-                                            {category.category}
-                                        </h2>
-                                        <p className="text-black/60 text-sm">{category.questions.length} questions</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4 max-w-4xl">
-                                    {category.questions.map((faq, idx) => (
-                                        <details
-                                            key={idx}
-                                            className="group bg-white border-2 border-black/10 rounded-2xl p-6 hover:border-black hover:shadow-lg transition-all"
-                                        >
-                                            <summary className="font-black text-lg tracking-tight cursor-pointer list-none flex items-start justify-between gap-4">
-                                                <span className="flex-1">{faq.question}</span>
-                                                <ChevronDown className="w-6 h-6 flex-shrink-0 group-open:rotate-180 transition-transform" />
-                                            </summary>
-                                            <p className="text-black/70 mt-4 leading-relaxed pl-0">
-                                                {faq.answer}
-                                            </p>
-                                        </details>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {searchQuery && filteredCategories.length === 0 && (
-                    <div className="text-center py-16">
-                        <HelpCircle className="w-16 h-16 mx-auto mb-4 text-black/20" />
-                        <h3 className="text-2xl font-black mb-2">No results found</h3>
-                        <p className="text-black/60">Try searching with different keywords</p>
+                                    <h3 className={`text-xs lg:text-sm font-black uppercase tracking-wider leading-tight ${openCategory === idx ? 'text-white' : 'text-black'
+                                        }`}>
+                                        {category.category}
+                                    </h3>
+                                </button>
+                            );
+                        })}
                     </div>
-                )}
+
+                    {/* FAQ Accordions */}
+                    <div className="space-y-16">
+                        {(searchQuery ? filteredCategories : openCategory !== null ? [faqCategories[openCategory]] : faqCategories).map((category, catIdx) => {
+                            const Icon = category.icon;
+
+                            return (
+                                <div key={catIdx} className="scroll-mt-24">
+                                    <div className="flex items-center gap-4 lg:gap-6 mb-10">
+                                        <div className={`bg-gradient-to-br ${category.color} text-white w-16 h-16 lg:w-20 lg:h-20 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform`}>
+                                            <Icon className="w-8 h-8 lg:w-10 lg:h-10" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-3xl lg:text-5xl font-black tracking-tighter uppercase leading-tight">
+                                                {category.category}
+                                            </h2>
+                                            <p className="text-black/60 text-sm lg:text-base font-bold">{category.questions.length} Questions Answered</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {category.questions.map((faq, idx) => (
+                                            <details
+                                                key={idx}
+                                                className="group bg-white border-2 border-black/10 rounded-3xl p-6 lg:p-8 hover:border-black hover:shadow-2xl transition-all hover:scale-[1.02] transform"
+                                            >
+                                                <summary className="font-black text-base lg:text-lg tracking-tight cursor-pointer list-none flex items-start justify-between gap-4 select-none">
+                                                    <span className="flex-1 pr-2">{faq.question}</span>
+                                                    <div className="bg-gradient-to-br from-black to-gray-900 text-white w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center flex-shrink-0 group-open:rotate-180 transition-all shadow-lg">
+                                                        <ChevronDown className="w-5 h-5" />
+                                                    </div>
+                                                </summary>
+                                                <div className="mt-6 pt-6 border-t-2 border-black/5">
+                                                    <p className="text-black/70 leading-relaxed text-base">
+                                                        {faq.answer}
+                                                    </p>
+                                                </div>
+                                            </details>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {searchQuery && filteredCategories.length === 0 && (
+                        <div className="text-center py-20 bg-white rounded-3xl border-2 border-black/10">
+                            <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <HelpCircle className="w-12 h-12 text-black/20" />
+                            </div>
+                            <h3 className="text-3xl font-black mb-3 tracking-tight">No Results Found</h3>
+                            <p className="text-black/60 text-lg">Try searching with different keywords</p>
+                        </div>
+                    )}
+                </div>
             </section>
 
             {/* Still Have Questions */}
@@ -252,15 +262,18 @@ const FAQ = () => {
                         Can't find what you're looking for? Our support team is available 24/7 to help you.
                     </p>
                     <div className="flex flex-wrap gap-4 justify-center">
-                        <a
-                            href="/contact"
+                        <Link
+                            to="/contact"
                             className="inline-flex items-center gap-3 bg-white text-black px-10 py-5 rounded-full hover:bg-white/90 transition-all font-bold uppercase tracking-wider shadow-lg hover:shadow-2xl transform hover:scale-105"
                         >
                             Contact Support
-                        </a>
-                        <button className="inline-flex items-center gap-3 bg-transparent text-white px-10 py-5 rounded-full border-2 border-white hover:bg-white hover:text-black transition-all font-bold uppercase tracking-wider">
+                        </Link>
+                        <Link
+                            to="/not-found"
+                            className="inline-flex items-center gap-3 bg-transparent text-white px-10 py-5 rounded-full border-2 border-white hover:bg-white hover:text-black transition-all font-bold uppercase tracking-wider"
+                        >
                             Live Chat
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
