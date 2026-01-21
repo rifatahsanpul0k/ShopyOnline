@@ -28,6 +28,7 @@ const AdminLayout = () => {
         { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
         { name: "Products", href: "/admin/products", icon: Package },
         { name: "Users", href: "/admin/users", icon: Users },
+        { name: "Profile", href: "/admin/profile", icon: UserCircle },
     ];
 
     const handleLogout = () => {
@@ -149,8 +150,9 @@ const AdminLayout = () => {
                                     <NotificationBell />
 
                                     {/* Admin Avatar & Info */}
-                                    <div
-                                        className="flex items-center gap-3 pl-3 border-l border-gray-200"
+                                    <Link
+                                        to="/admin/profile"
+                                        className="flex items-center gap-3 pl-3 border-l border-gray-200 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
                                     >
                                         <div className="hidden md:block text-right">
                                             <p className="font-bold text-sm text-gray-900">{authUser?.name || "Admin"}</p>
@@ -167,7 +169,7 @@ const AdminLayout = () => {
                                                 {authUser?.name?.charAt(0).toUpperCase() || "A"}
                                             </div>
                                         )}
-                                    </div>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
