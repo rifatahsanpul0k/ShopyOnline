@@ -174,13 +174,13 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
   `;
   const newProductsResult = await database.query(newProductsQuery);
 
-  // Query for fetching top-rated products (ratings >= 4.5)
+  // Query for fetching top-rated products (ratings >= 4.0)
   const topRatedQuery = `
     SELECT p.*,
     COUNT(r.id) AS review_count
     FROM products p
     LEFT JOIN reviews r ON p.id = r.product_id
-    WHERE p.ratings >= 4.5
+    WHERE p.ratings >= 4.0
     GROUP BY p.id
     ORDER BY p.ratings DESC, p.created_at DESC
     LIMIT 15

@@ -1,16 +1,79 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X, LogOut } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/slices/authSlice";
 import NotificationBell from "./NotificationBell";
+import { axiosInstance } from "../../lib/axios";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { authUser } = useSelector((state) => state.auth);
   const state = useSelector((state) => state);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Debounced search function
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim().length > 0) {
+        handleSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowResults(false);
+      }
+    }, 300); // Wait 300ms after user stops typing
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  const handleSearch = async (query) => {
+    if (!query.trim()) return;
+
+    setIsSearching(true);
+    setShowResults(true);
+
+    try {
+      const response = await axiosInstance.get(`/product?search=${encodeURIComponent(query)}`);
+      setSearchResults(response.data.products || []);
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+      setShowResults(false);
+      setSearchQuery("");
+    }
+  };
+
+  const handleProductClick = () => {
+    setShowResults(false);
+    setSearchQuery("");
+  };
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -38,13 +101,112 @@ const Navbar = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="hidden lg:flex flex-1 max-w-xl bg-gray-100 rounded-pill px-4 py-3 items-center gap-3">
-            <Search className="text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search for products..."
-              className="bg-transparent border-none outline-none w-full text-sm placeholder-gray-400"
-            />
+          <div className="hidden lg:flex flex-1 max-w-xl relative" ref={searchRef}>
+            <form onSubmit={handleSearchSubmit} className="w-full">
+              <div className="flex items-center gap-3 bg-black/5 border-2 border-transparent hover:border-black/10 focus-within:border-black focus-within:bg-white rounded-full px-5 py-3.5 transition-all">
+                <Search className="text-black/40" size={20} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products, categories..."
+                  className="bg-transparent border-none outline-none w-full text-sm placeholder-black/40 font-medium"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSearchResults([]);
+                      setShowResults(false);
+                    }}
+                    className="text-black/40 hover:text-black hover:bg-black/5 rounded-full p-1 transition"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+            </form>
+
+            {/* Search Results Dropdown */}
+            {showResults && (
+              <div className="absolute top-full mt-3 w-full bg-white rounded-3xl shadow-[0_20px_70px_rgba(0,0,0,0.15)] border-2 border-black/5 max-h-[520px] overflow-hidden z-50">
+                {isSearching ? (
+                  <div className="p-12 text-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-2 border-black/20 border-t-black mx-auto"></div>
+                    <p className="text-sm text-black/50 mt-4 font-medium">Searching products...</p>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div>
+                    <div className="px-6 py-4 border-b border-black/5 bg-black/[0.02]">
+                      <p className="text-xs font-black text-black/50 uppercase tracking-wider">
+                        Found {searchResults.length} {searchResults.length === 1 ? "Product" : "Products"}
+                      </p>
+                    </div>
+                    <div className="max-h-[400px] overflow-y-auto p-2">
+                      {searchResults.slice(0, 8).map((product) => {
+                        const images = typeof product.images === "string" ? JSON.parse(product.images) : product.images;
+                        const productImage = images && images.length > 0 ? images[0].url : "/img2.png";
+
+                        return (
+                          <Link
+                            key={product.id}
+                            to={`/product/${product.id}`}
+                            onClick={handleProductClick}
+                            className="flex items-center gap-3 p-2 hover:bg-black/5 rounded-2xl transition-all group border-2 border-transparent hover:border-black/10"
+                          >
+                            <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center p-1.5 group-hover:bg-white transition">
+                              <img
+                                src={productImage}
+                                alt={product.name}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-sm line-clamp-1 group-hover:text-black/80 tracking-tight">{product.name}</h4>
+                              <p className="text-xs text-black/40 uppercase tracking-wider mt-0.5">— {product.category}</p>
+                              <p className="font-black text-sm mt-1">${product.price}</p>
+                            </div>
+                            <div className="opacity-0 group-hover:opacity-100 transition">
+                              <div className="bg-black text-white p-1.5 rounded-full">
+                                <Search className="w-4 h-4" />
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                    {searchResults.length > 8 && (
+                      <div className="border-t border-black/5 p-3">
+                        <Link
+                          to={`/products?search=${encodeURIComponent(searchQuery)}`}
+                          onClick={handleProductClick}
+                          className="flex items-center justify-center gap-2 w-full py-3 text-sm font-black text-black bg-black/5 hover:bg-black hover:text-white rounded-full transition-all uppercase tracking-wider"
+                        >
+                          View All {searchResults.length} Results
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                ) : searchQuery.trim() ? (
+                  <div className="p-12 text-center">
+                    <div className="w-16 h-16 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search className="w-8 h-8 text-black/30" />
+                    </div>
+                    <p className="text-black/70 font-medium mb-2">No products found</p>
+                    <p className="text-sm text-black/40 mb-6">Try searching with different keywords</p>
+                    <Link
+                      to="/products"
+                      onClick={handleProductClick}
+                      className="inline-block mt-4 text-sm font-bold text-black hover:underline"
+                    >
+                      Browse All Products
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
 
           {/* Icons & Auth */}
@@ -85,13 +247,6 @@ const Navbar = () => {
                     <User size={24} />
                   )}
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="hover:opacity-70 transition-opacity"
-                  title="Logout"
-                >
-                  <LogOut size={24} />
-                </button>
               </div>
             ) : (
               <div className="flex items-center gap-2">

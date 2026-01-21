@@ -20,7 +20,7 @@ import {
     AlertTriangle,
     Loader,
 } from "lucide-react";
-import { fetchAllOrders, updateOrderStatus, deleteOrderAPI } from "../../services/ordersAdminService";
+import { fetchAllOrders, updateOrderStatus, deleteOrderAPI, fetchOrderDetails } from "../../services/ordersAdminService";
 import { formatPrice } from "../../utils/currencyFormatter";
 import { formatDate } from "../../utils/formatters";
 import { toast } from "react-toastify";
@@ -31,6 +31,8 @@ const AdminOrders = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [orderItems, setOrderItems] = useState([]);
+    const [loadingItems, setLoadingItems] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -52,6 +54,22 @@ const AdminOrders = () => {
             toast.error("Failed to load orders");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadOrderDetails = async (orderId) => {
+        try {
+            setLoadingItems(true);
+            const response = await fetchOrderDetails(orderId);
+            if (response.success && response.orders) {
+                setOrderItems(response.orders.order_items || []);
+            }
+        } catch (error) {
+            console.error("Error loading order details:", error);
+            toast.error("Failed to load order details");
+            setOrderItems([]);
+        } finally {
+            setLoadingItems(false);
         }
     };
 
@@ -369,7 +387,11 @@ const AdminOrders = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                             <button
-                                                onClick={() => { setSelectedOrder(order); setShowDetailsModal(true); }}
+                                                onClick={() => {
+                                                    setSelectedOrder(order);
+                                                    setShowDetailsModal(true);
+                                                    loadOrderDetails(order.id);
+                                                }}
                                                 className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
                                                 title="View Details"
                                             >
@@ -461,10 +483,43 @@ const AdminOrders = () => {
                                 </div>
                             </div>
 
-                            {/* Items List (Placeholder if items not available in this specific API response, but structure is there) */}
+                            {/* Order Items */}
                             <div className="border-t border-b border-gray-100 py-6">
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    <Package size={14} /> Order Summary
+                                    <Package size={14} /> Order Items ({orderItems.length})
+                                </p>
+
+                                {loadingItems ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <Loader className="w-6 h-6 animate-spin text-gray-400" />
+                                    </div>
+                                ) : orderItems.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {orderItems.map((item, index) => (
+                                            <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                                <div className="w-8 h-8 rounded-lg bg-black/5 flex items-center justify-center flex-shrink-0">
+                                                    <Package className="w-4 h-4 text-gray-600" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-sm text-black">{item.product_name || 'Product'}</p>
+                                                    <p className="text-xs text-gray-500">Quantity: {item.quantity} × {formatPrice(item.price)}</p>
+                                                </div>
+                                                <p className="font-bold text-black">{formatPrice(item.price * item.quantity)}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-400">
+                                        <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No items found</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Order Summary */}
+                            <div className="border-b border-gray-100 pb-6">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <CreditCard size={14} /> Order Summary
                                 </p>
 
                                 {/* Financial Breakdown */}
