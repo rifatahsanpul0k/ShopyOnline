@@ -390,8 +390,8 @@ const Home = () => {
                 key={index}
                 onClick={() => goToSlide(index)}
                 className={`h-2 rounded-full transition-all ${index === currentSlide
-                    ? "w-12 bg-white"
-                    : "w-2 bg-white/30 hover:bg-white/60"
+                  ? "w-12 bg-white"
+                  : "w-2 bg-white/30 hover:bg-white/60"
                   }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -420,10 +420,18 @@ const Home = () => {
 
       {/* 2. NEW ARRIVALS - Products from last 30 days (max 8) */}
       <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto">
-        <div className="mb-16">
+        <div className="mb-16 flex items-center justify-between">
           <h2 className="text-5xl font-black tracking-tighter uppercase">
             New Arrivals
           </h2>
+          <Link
+            to="/new-arrivals"
+            onClick={handleProtectedNavigation}
+            className="group inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-all font-bold uppercase tracking-wider text-sm"
+          >
+            View All
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
 
         {/* Loading State */}
@@ -574,11 +582,19 @@ const Home = () => {
       </section>
 
       {/* 4. TOP RATED PRODUCTS - Rating 4.5 or higher */}
-      <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto bg-gray-50">
-        <div className="mb-16">
+      <section className="py-24 px-6 lg:px-12 max-w-[1440px] mx-auto">
+        <div className="mb-16 flex items-center justify-between">
           <h2 className="text-5xl font-black tracking-tighter uppercase">
             Top Rated Products
           </h2>
+          <Link
+            to="/top-rated"
+            onClick={handleProtectedNavigation}
+            className="group inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-all font-bold uppercase tracking-wider text-sm"
+          >
+            View All
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
 
         {/* Loading State */}
@@ -604,16 +620,17 @@ const Home = () => {
                     key={product.id}
                     to={`/product/${product.id}`}
                     onClick={handleProtectedNavigation}
-                    className="group border-b-2 border-transparent hover:border-black transition-all pb-6 bg-white p-6 rounded-lg flex-shrink-0 snap-start"
+                    className="group border-b-2 border-transparent hover:border-black transition-all pb-6 flex-shrink-0 snap-start"
                     style={{ width: "300px" }}
                   >
-                    <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4">
+                    <div className="h-64 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center p-4 relative">
                       <img
                         src={productImage}
                         alt={product.name}
                         className={`w-full h-full object-contain transition-all duration-500 ${product.stock === 0 ? "grayscale" : ""
                           }`}
                       />
+                      <StockBadge stock={product.stock || 0} />
                     </div>
                     <h3 className="font-bold text-lg leading-tight mb-3 uppercase tracking-tight line-clamp-2">
                       {product.name}
@@ -622,30 +639,27 @@ const Home = () => {
                       <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
                         — {product.category}
                       </p>
-                      <p className="text-[11px] text-black/50 font-medium uppercase tracking-wider">
-                        — Stock: {product.stock}
-                      </p>
                     </div>
-                    {/* Rating Stars - Prominent for top rated */}
-                    <div className="flex items-center gap-1 mb-4 bg-yellow-50 p-2 rounded">
+                    {/* Rating Stars */}
+                    <div className="flex items-center gap-1 mb-4">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-5 h-5 ${i < Math.floor(product.ratings || 0)
+                          className={`w-4 h-4 ${i < Math.floor(product.ratings || 0)
                             ? "fill-yellow-400 text-yellow-400"
                             : "text-gray-300"
                             }`}
                         />
                       ))}
-                      <span className="text-sm font-bold text-black ml-1">
-                        {product.ratings ? Number(product.ratings).toFixed(1) : "0.0"} / 5
+                      <span className="text-sm text-black/60 ml-1">
+                        ({product.ratings ? Number(product.ratings).toFixed(1) : "0.0"})
                       </span>
+                      {product.review_count && (
+                        <span className="text-xs text-black/40 ml-1">
+                          ({product.review_count} reviews)
+                        </span>
+                      )}
                     </div>
-                    {product.review_count && (
-                      <p className="text-xs text-black/50 mb-3">
-                        {product.review_count} customer reviews
-                      </p>
-                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-black">
                         {formatPrice(product.price)}

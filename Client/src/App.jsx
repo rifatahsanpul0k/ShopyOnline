@@ -23,6 +23,8 @@ import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Orders from "./pages/Orders";
 import UserProfile from "./pages/UserProfile";
+import NewArrivals from "./pages/NewArrivals";
+import TopRated from "./pages/TopRated";
 
 // Auth Pages
 import Login from "./pages/Auth/Login";
@@ -95,6 +97,8 @@ const App = () => {
                     <Route path="/products" element={<Products />} />
                     <Route path="/product/:id" element={<ProductDetail />} />
                     <Route path="/cart" element={<Cart />} />
+                    <Route path="/new-arrivals" element={<NewArrivals />} />
+                    <Route path="/top-rated" element={<TopRated />} />
 
                     {/* Auth Routes */}
                     <Route path="/auth/login" element={<Login />} />

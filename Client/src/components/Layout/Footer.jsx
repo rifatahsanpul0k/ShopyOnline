@@ -53,7 +53,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/products?sort=sale"
+                  to="/not-found"
                   className="text-gray-400 hover:text-white transition"
                 >
                   On Sale
@@ -61,19 +61,19 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/products?sort=new"
+                  to="/new-arrivals"
                   className="text-gray-400 hover:text-white transition"
                 >
                   New Arrivals
                 </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/top-rated"
                   className="text-gray-400 hover:text-white transition"
                 >
-                  Best Sellers
-                </a>
+                  Top Rated
+                </Link>
               </li>
             </ul>
           </div>
@@ -91,28 +91,28 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/not-found"
                   className="text-gray-400 hover:text-white transition"
                 >
                   Careers
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/not-found"
                   className="text-gray-400 hover:text-white transition"
                 >
                   Blog
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/not-found"
                   className="text-gray-400 hover:text-white transition"
                 >
                   Press
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -122,12 +122,12 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/not-found"
                   className="text-gray-400 hover:text-white transition"
                 >
                   Help Center
-                </a>
+                </Link>
               </li>
               <li>
                 <a
@@ -146,12 +146,12 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/not-found"
                   className="text-gray-400 hover:text-white transition"
                 >
                   Shipping Info
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
