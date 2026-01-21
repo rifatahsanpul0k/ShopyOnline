@@ -10,7 +10,6 @@ const FAQ = () => {
         {
             category: "Ordering & Payment",
             icon: CreditCard,
-            color: "from-purple-500 to-pink-500",
             questions: [
                 {
                     question: "What payment methods do you accept?",
@@ -29,7 +28,6 @@ const FAQ = () => {
         {
             category: "Shipping & Delivery",
             icon: Truck,
-            color: "from-blue-500 to-cyan-500",
             questions: [
                 {
                     question: "What are your shipping options?",
@@ -52,7 +50,6 @@ const FAQ = () => {
         {
             category: "Returns & Refunds",
             icon: RefreshCw,
-            color: "from-green-500 to-emerald-500",
             questions: [
                 {
                     question: "What is your return policy?",
@@ -75,7 +72,6 @@ const FAQ = () => {
         {
             category: "Products & Stock",
             icon: Package,
-            color: "from-orange-500 to-red-500",
             questions: [
                 {
                     question: "Are all products authentic?",
@@ -94,7 +90,6 @@ const FAQ = () => {
         {
             category: "Account & Security",
             icon: Shield,
-            color: "from-indigo-500 to-purple-500",
             questions: [
                 {
                     question: "Is my personal information secure?",
@@ -178,8 +173,8 @@ const FAQ = () => {
                                         : 'bg-white border-black/10 hover:border-black/30 shadow-lg'
                                         }`}
                                 >
-                                    <div className={`bg-gradient-to-br ${category.color} rounded-2xl w-12 h-12 lg:w-16 lg:h-16 flex items-center justify-center mx-auto mb-4 ${openCategory === idx ? 'shadow-lg' : ''}`}>
-                                        <Icon className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+                                    <div className={`rounded-2xl w-12 h-12 lg:w-16 lg:h-16 flex items-center justify-center mx-auto mb-4 ${openCategory === idx ? 'bg-white shadow-lg' : 'bg-black/10'}`}>
+                                        <Icon className={`w-6 h-6 lg:w-8 lg:h-8 ${openCategory === idx ? 'text-black' : 'text-black/70'}`} />
                                     </div>
                                     <h3 className={`text-xs lg:text-sm font-black uppercase tracking-wider leading-tight ${openCategory === idx ? 'text-white' : 'text-black'
                                         }`}>
@@ -198,7 +193,7 @@ const FAQ = () => {
                             return (
                                 <div key={catIdx} className="scroll-mt-24">
                                     <div className="flex items-center gap-4 lg:gap-6 mb-10">
-                                        <div className={`bg-gradient-to-br ${category.color} text-white w-16 h-16 lg:w-20 lg:h-20 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform`}>
+                                        <div className="bg-black text-white w-16 h-16 lg:w-20 lg:h-20 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform">
                                             <Icon className="w-8 h-8 lg:w-10 lg:h-10" />
                                         </div>
                                         <div>

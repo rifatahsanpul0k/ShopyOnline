@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X, LogOut } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/slices/authSlice";
 import NotificationBell from "./NotificationBell";
@@ -247,13 +247,6 @@ const Navbar = () => {
                     <User size={24} />
                   )}
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="hover:opacity-70 transition-opacity"
-                  title="Logout"
-                >
-                  <LogOut size={24} />
-                </button>
               </div>
             ) : (
               <div className="flex items-center gap-2">

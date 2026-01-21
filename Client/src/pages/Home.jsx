@@ -125,25 +125,25 @@ const FEATURED_TECH = [
 const CATEGORIES = [
   {
     name: "Laptops",
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80",
+    image: "/cat_laptop.jpg",
     slug: "laptops",
     description: "High-performance computing"
   },
   {
     name: "Smartphones",
-    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80",
+    image: "/cat_smartphone.jpg",
     slug: "smartphones",
     description: "Latest mobile technology"
   },
   {
     name: "Components",
-    image: "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=800&q=80",
+    image: "/cat_component.jpg",
     slug: "components",
     description: "Build your dream PC"
   },
   {
     name: "Watches",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
+    image: "/cat_watch.jpg",
     slug: "watches",
     description: "Premium timepieces"
   },

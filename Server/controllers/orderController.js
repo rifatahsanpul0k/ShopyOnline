@@ -174,6 +174,8 @@ export const fetchSingleOrder = catchAsyncErrors(async (req, res, next) => {
     'order_item_id', oi.id,
     'order_id', oi.order_id,
     'product_id', oi.product_id,
+    'product_name', oi.title,
+    'product_image', oi.image,
     'quantity', oi.quantity,
     'price', oi.price
     )
