@@ -693,51 +693,7 @@ const UserProfile = () => {
                   </div>
                 </div>
 
-                {/* Preferences Card */}
-                <div className="bg-white rounded-3xl shadow-xl shadow-gray-100/50 border border-gray-100 p-8">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="p-3 bg-gray-50 rounded-xl">
-                      <Settings className="w-6 h-6 text-gray-700" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900">
-                        Preferences
-                      </h2>
-                      <p className="text-gray-500 text-sm">
-                        Manage your notification settings
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-4 max-w-3xl">
-                    <div className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition cursor-pointer">
-                      <div>
-                        <p className="font-bold text-gray-900">
-                          Order Notifications
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Receive email updates about your order status
-                        </p>
-                      </div>
-                      <div className="w-12 h-6 bg-black rounded-full relative">
-                        <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1"></div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition cursor-pointer">
-                      <div>
-                        <p className="font-bold text-gray-900">
-                          Promotional Emails
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Receive emails about new products and sales
-                        </p>
-                      </div>
-                      <div className="w-12 h-6 bg-gray-200 rounded-full relative">
-                        <div className="w-4 h-4 bg-white rounded-full absolute left-1 top-1 shadow-sm"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
           </div>
