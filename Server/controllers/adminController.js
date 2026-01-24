@@ -97,7 +97,7 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
     const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
 
     // Total Revenue All Time
-    const totalRevenueAllTimeQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE paid_at IS NOT NULL`);
+    const totalRevenueAllTimeQuery = await database.query(`SELECT SUM(total_price) FROM orders`);
     const totalRevenueAllTime = parseFloat(totalRevenueAllTimeQuery.rows[0].sum) || 0;
 
     // Total Users Count
@@ -105,7 +105,7 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
     const totalUsersCount = parseInt(totalUsersCountQuery.rows[0].count) || 0;
 
     // Order Status Counts
-    const orderStatusCountsQuery = await database.query(`SELECT order_status, COUNT(*) FROM orders WHERE paid_at IS NOT NULL GROUP BY order_status`);
+    const orderStatusCountsQuery = await database.query(`SELECT order_status, COUNT(*) FROM orders GROUP BY order_status`);
 
     const orderStatusCounts = { Processing: 0, Shipped: 0, Delivered: 0, Cancelled: 0, };
     orderStatusCountsQuery.rows.forEach((row) => {
@@ -113,11 +113,11 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
     });
 
     // Today's Revenue
-    const todayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1 AND paid_at IS NOT NULL`, [todayDate]);
+    const todayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1`, [todayDate]);
     const todayRevenue = parseFloat(todayRevenueQuery.rows[0].sum) || 0;
 
     // Yesterday's Revenue
-    const yesterdayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1 AND paid_at IS NOT NULL  `, [yesterdayDate]);
+    const yesterdayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1`, [yesterdayDate]);
     const yesterdayRevenue = parseFloat(yesterdayRevenueQuery.rows[0].sum) || 0;
 
     // Monthly Sales Data
@@ -127,7 +127,7 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
         TO_CHAR(created_at, 'Mon YYYY') AS month,
         DATE_TRUNC('month', created_at) as date,
         SUM(total_price) as totalsales
-        FROM orders WHERE paid_at IS NOT NULL
+        FROM orders
         GROUP BY month, date
         ORDER BY date ASC
         `
@@ -148,7 +148,6 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
         FROM order_items oi
         JOIN products p ON p.id = oi.product_id
         JOIN orders o ON o.id = oi.order_id
-        WHERE o.paid_at IS NOT NULL
         GROUP BY p.name, p.images, p.category, p.ratings
         ORDER BY total_sold DESC
         LIMIT 5
@@ -161,7 +160,7 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
         `
         SELECT SUM(total_price) AS total 
         FROM orders 
-        WHERE paid_at IS NOT NULL AND created_at BETWEEN $1 AND $2  
+        WHERE created_at BETWEEN $1 AND $2  
         `, [currentMonthStart, currentMonthEnd]
     );
     const currentMonthSales = parseFloat(currentMonthSalesQuery.rows[0].total) || 0;
@@ -175,7 +174,7 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
         `
         SELECT SUM(total_price) AS total 
         FROM orders
-        WHERE paid_at IS NOT NULL AND created_at BETWEEN $1 AND $2
+        WHERE created_at BETWEEN $1 AND $2
         `, [previousMonthStart, previousMonthEnd]
     );
     const lastMonthRevenue = parseFloat(lastMonthRevenueQuery.rows[0].total) || 0;
@@ -194,7 +193,7 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
 
     // Total Orders This Month
     const totalOrdersThisMonthQuery = await database.query(
-        `SELECT COUNT(*) FROM orders WHERE paid_at IS NOT NULL AND created_at BETWEEN $1 AND $2`,
+        `SELECT COUNT(*) FROM orders WHERE created_at BETWEEN $1 AND $2`,
         [currentMonthStart, currentMonthEnd]
     );
     const totalOrdersThisMonth = parseInt(totalOrdersThisMonthQuery.rows[0].count) || 0;

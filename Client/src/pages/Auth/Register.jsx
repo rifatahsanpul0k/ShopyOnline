@@ -4,6 +4,7 @@ import { User, Mail, Lock } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { registerUser } from "../../store/slices/authSlice";
 import Button from "../../components/ui/Button";
+import { LOGIN_ROUTE } from "../../constants/routes";
 
 import { toast } from "react-toastify";
 
