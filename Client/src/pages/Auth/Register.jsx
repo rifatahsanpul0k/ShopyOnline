@@ -6,8 +6,6 @@ import { registerUser } from "../../store/slices/authSlice";
 import Button from "../../components/ui/Button";
 
 import { toast } from "react-toastify";
-import { ROLE_ADMIN } from "../../constants/roles";
-import { ADMIN_DASHBOARD_ROUTE, HOME_ROUTE, LOGIN_ROUTE } from "../../constants/routes";
 
 const Register = () => {
   const [formData, setFormData] = useState({

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
     DollarSign,
     Users,
@@ -28,32 +29,27 @@ import {
     BarChart,
     Bar,
 } from "recharts";
-import { fetchDashboardStats } from "../../services/adminService";
+import { getDashboardStats } from "../../store/slices/adminSlice";
 import { formatPrice } from "../../utils/currencyFormatter";
 
 const Dashboard = () => {
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const dispatch = useDispatch();
+    const { stats, statsLoading: loading, error } = useSelector((state) => state.admin);
     const [exporting, setExporting] = useState(false);
+    const [initLoading, setInitLoading] = useState(true);
 
     useEffect(() => {
-        const loadStats = async () => {
-            try {
-                const data = await fetchDashboardStats();
-                if (data.success) {
-                    setStats(data);
-                }
-            } catch (err) {
-                setError("Failed to load dashboard data.");
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadStats();
-    }, []);
+        dispatch(getDashboardStats()).finally(() => setInitLoading(false));
 
-    if (loading) {
+        // Poll for updates every 30 seconds
+        const pollInterval = setInterval(() => {
+            dispatch(getDashboardStats());
+        }, 30000);
+
+        return () => clearInterval(pollInterval);
+    }, [dispatch]);
+
+    if (initLoading || (loading && !stats)) {
         return (
             <div className="flex flex-col items-center justify-center h-[70vh]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mb-4"></div>
@@ -62,13 +58,19 @@ const Dashboard = () => {
         );
     }
 
+
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center h-[50vh] text-center">
                 <AlertCircle size={48} className="text-red-500 mb-4" />
-                <h2 className="text-2xl font-black text-black mb-2">Error Loading Data</h2>
-                <p className="text-gray-500">{error}</p>
-                <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-black text-white rounded-full font-bold text-sm">Retry</button>
+                <h2 className="text-2xl font-black text-black mb-2 uppercase tracking-tighter">Error Loading Data</h2>
+                <p className="text-gray-500 mb-6">{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-8 py-3 bg-black text-white rounded-full font-bold text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors"
+                >
+                    Retry
+                </button>
             </div>
         );
     }
@@ -89,9 +91,9 @@ const Dashboard = () => {
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-black text-white p-4 rounded-xl shadow-xl border border-gray-800">
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">{label}</p>
-                    <p className="text-lg font-bold">
+                <div className="bg-black text-white p-4 rounded-2xl shadow-xl border border-gray-800">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">{label}</p>
+                    <p className="text-xl font-black">
                         {typeof payload[0].value === 'number' && payload[0].value > 1000
                             ? `$${payload[0].value.toLocaleString()}`
                             : payload[0].value}

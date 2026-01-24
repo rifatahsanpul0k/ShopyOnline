@@ -39,7 +39,6 @@ export const getUser = createAsyncThunk("auth/getUser", async (_, thunkAPI) => {
     const res = await axiosInstance.get("/auth/me");
     return res.data;
   } catch (error) {
-    // Silently fail - user is just not authenticated
     // Don't show error toast on initial page load
     return thunkAPI.rejectWithValue(
       error.response?.data?.message || "Not authenticated"
@@ -164,12 +163,6 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isSigningUp = false;
-        // Do not auto-login after registration as per requirement
-        // state.user = action.payload.user;
-        // state.authUser = action.payload.user;
-        // if (action.payload.token) {
-        //   localStorage.setItem("token", action.payload.token);
-        // }
       })
       .addCase(registerUser.rejected, (state) => {
         state.isSigningUp = false;
