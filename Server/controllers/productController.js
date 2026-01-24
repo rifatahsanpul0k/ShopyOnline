@@ -69,8 +69,8 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
   // Default to page 1 if not provided or invalid
   const page = parseInt(req.query.page) || 1;
 
-  // Display 10 products per page
-  const limit = 10;
+  // Allow custom limit, default to 24 products per page
+  const limit = parseInt(req.query.limit) || 24;
   // Skip products for previous pages
   const offset = (page - 1) * limit;
 
@@ -162,6 +162,12 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
     `;
   const result = await database.query(query, values);
 
+  // Parse images from JSON string to array for each product
+  const productsWithParsedImages = result.rows.map(product => ({
+    ...product,
+    images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images
+  }));
+
   // Query for fetching new products (added in last 30 days)
   const newProductsQuery = `
         SELECT p.*, COUNT(r.id) AS review_count
@@ -170,9 +176,15 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
         WHERE p.created_at >= NOW() - INTERVAL '30 days'
         GROUP BY p.id
         ORDER BY p.created_at DESC
-        LIMIT 15
+        LIMIT 9999
   `;
   const newProductsResult = await database.query(newProductsQuery);
+
+  // Parse images for new products
+  const newProductsWithParsedImages = newProductsResult.rows.map(product => ({
+    ...product,
+    images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images
+  }));
 
   // Query for fetching top-rated products (ratings >= 4.0)
   const topRatedQuery = `
@@ -183,17 +195,23 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
     WHERE p.ratings >= 4.0
     GROUP BY p.id
     ORDER BY p.ratings DESC, p.created_at DESC
-    LIMIT 15
+    LIMIT 9999
   `;
   const topRatedResult = await database.query(topRatedQuery);
+
+  // Parse images for top-rated products
+  const topRatedWithParsedImages = topRatedResult.rows.map(product => ({
+    ...product,
+    images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images
+  }));
 
   // Send response
   res.status(200).json({
     success: true,
-    products: result.rows,
+    products: productsWithParsedImages,
     totalProducts,
-    newProducts: newProductsResult.rows,
-    topRatedProducts: topRatedResult.rows,
+    newProducts: newProductsWithParsedImages,
+    topRatedProducts: topRatedWithParsedImages,
   });
 });
 
