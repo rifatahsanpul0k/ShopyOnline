@@ -56,9 +56,18 @@ export const updatePaymentStatus = async (req, res) => {
         }
 
         // Also update order payment status and set paid_at timestamp if payment is successful
-        if (paymentStatus === "succeeded" || paymentStatus === "paid") {
+        // Note: Using case-insensitive comparison since frontend may send "Paid" (uppercase)
+        const normalizedStatus = paymentStatus.toLowerCase();
+        if (normalizedStatus === "succeeded" || normalizedStatus === "paid") {
             await database.query(
                 "UPDATE orders SET payment_status = $1, paid_at = NOW() WHERE id = $2",
+                [paymentStatus, orderId]
+            );
+        } else if (normalizedStatus === "cancelled" || normalizedStatus === "failed" || normalizedStatus === "refunded") {
+            // If payment is cancelled/failed/refunded, clear the paid_at timestamp
+            // This ensures cancelled orders don't count towards revenue
+            await database.query(
+                "UPDATE orders SET payment_status = $1, paid_at = NULL WHERE id = $2",
                 [paymentStatus, orderId]
             );
         } else {

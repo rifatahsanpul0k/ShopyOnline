@@ -323,7 +323,19 @@ export const updateOrderStatus = catchAsyncErrors(async (req, res, next) => {
   const buyerId = order.buyer_id;
 
   // Update order status
-  const updatedOrder = await database.query(`UPDATE orders SET order_status = $1 WHERE id = $2 RETURNING *`, [order_status, orderId]);
+  // If order is being cancelled, also clear paid_at to ensure it doesn't count towards revenue
+  let updatedOrder;
+  if (order_status === 'Cancelled') {
+    updatedOrder = await database.query(
+      `UPDATE orders SET order_status = $1, paid_at = NULL WHERE id = $2 RETURNING *`,
+      [order_status, orderId]
+    );
+  } else {
+    updatedOrder = await database.query(
+      `UPDATE orders SET order_status = $1 WHERE id = $2 RETURNING *`,
+      [order_status, orderId]
+    );
+  }
 
   // Create notification for user about order status change
   const statusMessages = {
