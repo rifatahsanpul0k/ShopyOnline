@@ -96,8 +96,8 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
     const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
 
-    // Total Revenue All Time
-    const totalRevenueAllTimeQuery = await database.query(`SELECT SUM(total_price) FROM orders`);
+    // Total Revenue All Time (excluding cancelled orders)
+    const totalRevenueAllTimeQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE order_status != 'Cancelled'`);
     const totalRevenueAllTime = parseFloat(totalRevenueAllTimeQuery.rows[0].sum) || 0;
 
     // Total Users Count
@@ -112,15 +112,15 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
         orderStatusCounts[row.order_status] = parseInt(row.count);
     });
 
-    // Today's Revenue
-    const todayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1`, [todayDate]);
+    // Today's Revenue (excluding cancelled orders)
+    const todayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1 AND order_status != 'Cancelled'`, [todayDate]);
     const todayRevenue = parseFloat(todayRevenueQuery.rows[0].sum) || 0;
 
-    // Yesterday's Revenue
-    const yesterdayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1`, [yesterdayDate]);
+    // Yesterday's Revenue (excluding cancelled orders)
+    const yesterdayRevenueQuery = await database.query(`SELECT SUM(total_price) FROM orders WHERE created_at::date = $1 AND order_status != 'Cancelled'`, [yesterdayDate]);
     const yesterdayRevenue = parseFloat(yesterdayRevenueQuery.rows[0].sum) || 0;
 
-    // Monthly Sales Data
+    // Monthly Sales Data (excluding cancelled orders)
     const monthlySalesQuery = await database.query(
         `
         SELECT
@@ -128,6 +128,7 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
         DATE_TRUNC('month', created_at) as date,
         SUM(total_price) as totalsales
         FROM orders
+        WHERE order_status != 'Cancelled'
         GROUP BY month, date
         ORDER BY date ASC
         `
@@ -155,12 +156,12 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
     );
     const topSellingProducts = topSellingProductsQuery.rows;
 
-    // Current Month Sales
+    // Current Month Sales (excluding cancelled orders)
     const currentMonthSalesQuery = await database.query(
         `
         SELECT SUM(total_price) AS total 
         FROM orders 
-        WHERE created_at BETWEEN $1 AND $2  
+        WHERE created_at BETWEEN $1 AND $2 AND order_status != 'Cancelled'
         `, [currentMonthStart, currentMonthEnd]
     );
     const currentMonthSales = parseFloat(currentMonthSalesQuery.rows[0].total) || 0;
@@ -169,12 +170,12 @@ export const dashboardStats = catchAsyncErrors(async (req, res, next) => {
     const lowStockProductsQuery = await database.query(`SELECT name, stock FROM products WHERE stock <= 5 `);
     const lowStockProducts = lowStockProductsQuery.rows;
 
-    // Revenue Growth Calculation in percentage with respect to last month
+    // Revenue Growth Calculation in percentage with respect to last month (excluding cancelled orders)
     const lastMonthRevenueQuery = await database.query(
         `
         SELECT SUM(total_price) AS total 
         FROM orders
-        WHERE created_at BETWEEN $1 AND $2
+        WHERE created_at BETWEEN $1 AND $2 AND order_status != 'Cancelled'
         `, [previousMonthStart, previousMonthEnd]
     );
     const lastMonthRevenue = parseFloat(lastMonthRevenueQuery.rows[0].total) || 0;
