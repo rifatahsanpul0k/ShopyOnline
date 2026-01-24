@@ -7,6 +7,8 @@ import {
     Star,
     ShoppingBag,
     ChevronDown,
+    ChevronLeft,
+    ChevronRight,
     SlidersHorizontal,
     X,
     Grid3x3,
@@ -27,7 +29,7 @@ const TopRated = () => {
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 12;
+    const itemsPerPage = 24;
 
     // Slider bounds
     const [sliderBounds, setSliderBounds] = useState({ min: 0, max: 2000 });
@@ -197,7 +199,7 @@ const TopRated = () => {
                                                 className="absolute h-1.5 bg-black rounded-full z-10"
                                                 style={{
                                                     left: `calc(0.5rem + ${((filters.minPrice - sliderBounds.min) /
-                                                            (sliderBounds.max - sliderBounds.min)) *
+                                                        (sliderBounds.max - sliderBounds.min)) *
                                                         100
                                                         }% * (100% - 1rem) / 100%)`,
                                                     right: `calc(0.5rem + ${100 -
@@ -449,8 +451,8 @@ const TopRated = () => {
                                                             <Star
                                                                 key={i}
                                                                 className={`w-4 h-4 ${i < Math.floor(product.ratings || 0)
-                                                                        ? "fill-yellow-400 text-yellow-400"
-                                                                        : "text-gray-300"
+                                                                    ? "fill-yellow-400 text-yellow-400"
+                                                                    : "text-gray-300"
                                                                     }`}
                                                             />
                                                         ))}
@@ -477,32 +479,63 @@ const TopRated = () => {
 
                                 {/* Pagination */}
                                 {totalPages > 1 && (
-                                    <div className="flex items-center justify-center gap-2 mt-12">
+                                    <div className="flex justify-center items-center gap-2 mt-12">
                                         <button
-                                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                            onClick={() => {
+                                                setCurrentPage((p) => Math.max(1, p - 1));
+                                                window.scrollTo({ top: 0, behavior: "smooth" });
+                                            }}
                                             disabled={currentPage === 1}
-                                            className="px-4 py-2 rounded-lg border-2 border-black/10 font-bold disabled:opacity-30 hover:bg-black hover:text-white transition"
+                                            className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 hover:bg-black hover:text-white hover:border-black transition disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:cursor-not-allowed"
                                         >
-                                            Previous
+                                            <ChevronLeft className="w-4 h-4" />
                                         </button>
-                                        {[...Array(totalPages)].map((_, i) => (
-                                            <button
-                                                key={i}
-                                                onClick={() => setCurrentPage(i + 1)}
-                                                className={`w-10 h-10 rounded-lg font-bold transition ${currentPage === i + 1
-                                                        ? "bg-black text-white"
-                                                        : "border-2 border-black/10 hover:bg-black hover:text-white"
-                                                    }`}
-                                            >
-                                                {i + 1}
-                                            </button>
-                                        ))}
+
+                                        {[...Array(totalPages)].map((_, i) => {
+                                            const page = i + 1;
+                                            // Show first, last, and current surroundings
+                                            if (
+                                                page === 1 ||
+                                                page === totalPages ||
+                                                (page >= currentPage - 1 && page <= currentPage + 1)
+                                            ) {
+                                                return (
+                                                    <button
+                                                        key={page}
+                                                        onClick={() => {
+                                                            setCurrentPage(page);
+                                                            window.scrollTo({ top: 0, behavior: "smooth" });
+                                                        }}
+                                                        className={`w-10 h-10 flex items-center justify-center rounded-full font-bold transition ${currentPage === page
+                                                                ? "bg-black text-white border border-black"
+                                                                : "border border-gray-300 hover:border-black"
+                                                            }`}
+                                                    >
+                                                        {page}
+                                                    </button>
+                                                );
+                                            } else if (
+                                                page === currentPage - 2 ||
+                                                page === currentPage + 2
+                                            ) {
+                                                return (
+                                                    <span key={page} className="text-gray-400">
+                                                        ...
+                                                    </span>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+
                                         <button
-                                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                            onClick={() => {
+                                                setCurrentPage((p) => Math.min(totalPages, p + 1));
+                                                window.scrollTo({ top: 0, behavior: "smooth" });
+                                            }}
                                             disabled={currentPage === totalPages}
-                                            className="px-4 py-2 rounded-lg border-2 border-black/10 font-bold disabled:opacity-30 hover:bg-black hover:text-white transition"
+                                            className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 hover:bg-black hover:text-white hover:border-black transition disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:cursor-not-allowed"
                                         >
-                                            Next
+                                            <ChevronRight className="w-4 h-4" />
                                         </button>
                                     </div>
                                 )}

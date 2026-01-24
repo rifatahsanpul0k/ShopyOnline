@@ -176,7 +176,7 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
         WHERE p.created_at >= NOW() - INTERVAL '30 days'
         GROUP BY p.id
         ORDER BY p.created_at DESC
-        LIMIT 15
+        LIMIT 9999
   `;
   const newProductsResult = await database.query(newProductsQuery);
 
@@ -195,7 +195,7 @@ export const fetchAllProducts = catchAsyncErrors(async (req, res, next) => {
     WHERE p.ratings >= 4.0
     GROUP BY p.id
     ORDER BY p.ratings DESC, p.created_at DESC
-    LIMIT 15
+    LIMIT 9999
   `;
   const topRatedResult = await database.query(topRatedQuery);
 
