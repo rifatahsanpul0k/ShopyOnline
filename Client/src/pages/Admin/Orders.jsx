@@ -569,7 +569,7 @@ const AdminOrders = () => {
 
                         {/* Footer Actions */}
                         <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3 justify-between">
-                            {selectedOrder.order_status === "Delivered" && (
+                            {(selectedOrder.order_status === "Delivered" || selectedOrder.order_status === "Cancelled") && (
                                 <button
                                     onClick={() => setShowDeleteConfirm(true)}
                                     className="px-6 py-3 font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 border-2 border-red-200"
@@ -577,7 +577,7 @@ const AdminOrders = () => {
                                     <Trash2 size={18} /> Delete Order
                                 </button>
                             )}
-                            {selectedOrder.order_status !== "Delivered" && (
+                            {selectedOrder.order_status !== "Delivered" && selectedOrder.order_status !== "Cancelled" && (
                                 <div></div>
                             )}
                             <div className="flex gap-3">
