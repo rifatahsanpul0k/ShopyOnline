@@ -265,7 +265,7 @@ const AdminProducts = () => {
                 </div>
             </div>
             <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">{label}</p>
-            <h3 className="text-3xl font-black mt-1 text-black">{value}</h3>
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-black mt-1 text-black truncate">{value}</h3>
         </div>
     );
 

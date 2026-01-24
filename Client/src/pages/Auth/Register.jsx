@@ -4,10 +4,9 @@ import { User, Mail, Lock } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { registerUser } from "../../store/slices/authSlice";
 import Button from "../../components/ui/Button";
+import { LOGIN_ROUTE } from "../../constants/routes";
 
 import { toast } from "react-toastify";
-import { ROLE_ADMIN } from "../../constants/roles";
-import { ADMIN_DASHBOARD_ROUTE, HOME_ROUTE, LOGIN_ROUTE } from "../../constants/routes";
 
 const Register = () => {
   const [formData, setFormData] = useState({

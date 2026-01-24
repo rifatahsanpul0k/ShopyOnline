@@ -404,6 +404,7 @@ export const deleteUserOrder = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+
 // Admin: Delete an order
 export const deleteAdminOrder = catchAsyncErrors(async (req, res, next) => {
   const { orderId } = req.params;
@@ -435,5 +436,36 @@ export const deleteAdminOrder = catchAsyncErrors(async (req, res, next) => {
     success: true,
     message: "Order deleted successfully.",
     order: deleteResult.rows[0],
+  });
+});
+
+// Admin: Get order statistics
+export const getOrderStats = catchAsyncErrors(async (req, res, next) => {
+  const totalOrdersQuery = await database.query(`SELECT COUNT(*) FROM orders`);
+  const totalOrders = parseInt(totalOrdersQuery.rows[0].count);
+
+  const totalRevenueQuery = await database.query(
+    `SELECT SUM(total_price) FROM orders WHERE order_status != 'Cancelled'`
+  );
+  const totalRevenue = parseFloat(totalRevenueQuery.rows[0].sum) || 0;
+
+  const processingOrdersQuery = await database.query(
+    `SELECT COUNT(*) FROM orders WHERE order_status = 'Processing'`
+  );
+  const processingOrders = parseInt(processingOrdersQuery.rows[0].count);
+
+  const shippedOrdersQuery = await database.query(
+    `SELECT COUNT(*) FROM orders WHERE order_status = 'Shipped'`
+  );
+  const shippedOrders = parseInt(shippedOrdersQuery.rows[0].count);
+
+  res.status(200).json({
+    success: true,
+    stats: {
+      total: totalOrders,
+      totalRevenue,
+      processing: processingOrders,
+      shipped: shippedOrders,
+    },
   });
 });

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
     Trash2,
     Search,
@@ -9,68 +10,64 @@ import {
     User,
     ShieldAlert
 } from "lucide-react";
-import { fetchAllUsers, deleteUser } from "../../services/adminService";
+import { getAllUsers, removeUser } from "../../store/slices/adminSlice"; // Redux Actions
 import { toast } from "react-toastify";
 
 const Users = () => {
-    const [users, setUsers] = useState([]);
+    const dispatch = useDispatch();
+    const {
+        users,
+        totalUsers,
+        usersLoading: loading
+    } = useSelector((state) => state.admin);
+
     const [filteredUsers, setFilteredUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalCount, setTotalCount] = useState(0);
     const [searchTerm, setSearchTerm] = useState("");
+    const [initLoading, setInitLoading] = useState(true);
 
-    // Fetch Users
-    const loadUsers = async (pageNumber) => {
-        setLoading(true);
-        try {
-            const data = await fetchAllUsers(pageNumber);
-            if (data.success) {
-                setUsers(data.users);
-                setFilteredUsers(data.users); // Init filtered list
-                setTotalCount(data.totalUsers);
-                setTotalPages(Math.ceil(data.totalUsers / 10));
-            }
-        } catch (error) {
-            toast.error("Could not load users");
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // Fetch Users via Redux
     useEffect(() => {
-        loadUsers(page);
-    }, [page]);
+        // Only show full loader on first mount, subsequent page changes use table loader
+        const p = dispatch(getAllUsers(page));
+        p.finally(() => setInitLoading(false));
+    }, [dispatch, page]);
+
+    const isLoading = initLoading || loading;
+
 
     // Client-side search (for current page)
     useEffect(() => {
-        if (searchTerm === "") {
-            setFilteredUsers(users);
-        } else {
-            const lowerTerm = searchTerm.toLowerCase();
-            const filtered = users.filter(
-                (user) =>
-                    user.name.toLowerCase().includes(lowerTerm) ||
-                    user.email.toLowerCase().includes(lowerTerm)
-            );
-            setFilteredUsers(filtered);
+        if (users) {
+            if (searchTerm === "") {
+                setFilteredUsers(users);
+            } else {
+                const lowerTerm = searchTerm.toLowerCase();
+                const filtered = users.filter(
+                    (user) =>
+                        user.name.toLowerCase().includes(lowerTerm) ||
+                        user.email.toLowerCase().includes(lowerTerm)
+                );
+                setFilteredUsers(filtered);
+            }
         }
     }, [searchTerm, users]);
 
     const handleDelete = async (userId) => {
         if (window.confirm("Are you sure? This action involves removing a customer account.")) {
             try {
-                const data = await deleteUser(userId);
-                if (data.success) {
-                    toast.success("User account removed");
-                    loadUsers(page);
+                const resultAction = await dispatch(removeUser(userId));
+                if (removeUser.fulfilled.match(resultAction)) {
+                    // Toast handled in slice or we can add here if extra logic needed
                 }
             } catch (error) {
-                toast.error("Failed to delete user");
+                // Handled in slice
             }
         }
     };
+
+    // Calculate total pages locally based on Redux totalUsers
+    const totalPages = Math.ceil(totalUsers / 10) || 1;
 
     // Helper for Date Format
     const formatDate = (dateString) => {
@@ -87,7 +84,7 @@ const Users = () => {
             {/* 1. Header & Search */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-black text-black tracking-tight uppercase mb-2">
+                    <h1 className="text-4xl font-black text-black tracking-tighter uppercase mb-2">
                         Customer Base
                     </h1>
                     <p className="text-gray-500 font-medium">
@@ -107,7 +104,7 @@ const Users = () => {
                         />
                     </div>
                     <div className="bg-black text-white px-5 py-3 rounded-full text-sm font-bold shadow-lg whitespace-nowrap">
-                        {totalCount} Users
+                        {totalUsers} Users
                     </div>
                 </div>
             </div>
@@ -119,16 +116,16 @@ const Users = () => {
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">User Profile</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Phone</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Joined</th>
-                                <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">User Profile</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Phone</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Joined</th>
+                                <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
                             </tr>
                         </thead>
 
                         <tbody className="divide-y divide-gray-50">
-                            {loading ? (
+                            {isLoading ? (
                                 // Skeleton Loader
                                 [...Array(5)].map((_, i) => (
                                     <tr key={i} className="animate-pulse">
@@ -144,7 +141,7 @@ const Users = () => {
                                     <tr key={user.id} className="group hover:bg-gray-50/80 transition-colors">
 
                                         {/* Profile */}
-                                        <td className="px-8 py-5 whitespace-nowrap">
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-11 w-11 flex-shrink-0 relative">
                                                     {user.avatar?.url ? (
@@ -163,7 +160,7 @@ const Users = () => {
                                         </td>
 
                                         {/* Contact */}
-                                        <td className="px-8 py-5 whitespace-nowrap">
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2 text-sm text-gray-600 font-medium bg-gray-50 w-fit px-3 py-1 rounded-lg">
                                                 <Mail size={14} className="text-gray-400" />
                                                 {user.email}
@@ -171,14 +168,14 @@ const Users = () => {
                                         </td>
 
                                         {/* Phone */}
-                                        <td className="px-8 py-5 whitespace-nowrap">
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-600 font-medium">
                                                 {user.phone || "N/A"}
                                             </div>
                                         </td>
 
                                         {/* Date */}
-                                        <td className="px-8 py-5 whitespace-nowrap">
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
                                                 <Calendar size={14} />
                                                 {formatDate(user.created_at)}
@@ -186,8 +183,8 @@ const Users = () => {
                                         </td>
 
                                         {/* Actions */}
-                                        <td className="px-8 py-5 whitespace-nowrap text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                                            <div className="flex items-center justify-end gap-2">
                                                 <button
                                                     onClick={() => handleDelete(user.id)}
                                                     className="p-2 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 rounded-lg transition-colors"
@@ -201,8 +198,9 @@ const Users = () => {
                                 ))
                             ) : (
                                 // Empty State
+
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-24 text-center">
+                                    <td colSpan="5" className="px-6 py-24 text-center">
                                         <div className="flex flex-col items-center justify-center">
                                             <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                                                 <User size={32} className="text-gray-300" />
@@ -218,7 +216,7 @@ const Users = () => {
                 </div>
 
                 {/* 3. Pagination Footer */}
-                {!loading && filteredUsers.length > 0 && totalPages > 1 && (
+                {!isLoading && filteredUsers.length > 0 && totalPages > 1 && (
                     <div className="px-8 py-5 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
                         <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                             Showing Page <span className="text-black">{page}</span> of {totalPages}

@@ -48,8 +48,6 @@ import NotFound from "./pages/NotFound";
 
 const App = () => {
   const dispatch = useDispatch();
-
-  // Check if user is authenticated on app load
   // Check if user is authenticated on app load
   useEffect(() => {
     const token = localStorage.getItem("token");
