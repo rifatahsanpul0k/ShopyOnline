@@ -2,7 +2,7 @@ import { axiosInstance } from "../lib/axios";
 
 // Get all products (Admin)
 export const fetchAllProductsAdmin = async () => {
-    const response = await axiosInstance.get("/product");
+    const response = await axiosInstance.get("/product?limit=9999");
     return response.data;
 };
 
