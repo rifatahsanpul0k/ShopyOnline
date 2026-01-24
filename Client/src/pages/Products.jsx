@@ -6,6 +6,8 @@ import {
   SlidersHorizontal,
   X,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ShoppingBag,
   Grid3x3,
   List,
@@ -112,7 +114,7 @@ const Products = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
+  const itemsPerPage = 24;
 
   // Get category/sort URL params
   const categoryParam = searchParams.get("category")?.toLowerCase();

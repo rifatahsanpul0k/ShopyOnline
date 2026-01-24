@@ -16,7 +16,9 @@ export const fetchAllProducts = createAsyncThunk(
       if (params.category) queryParams.append("category", params.category);
       if (params.ratings) queryParams.append("ratings", params.ratings);
       if (params.search) queryParams.append("search", params.search);
-      if (params.page) queryParams.append("page", params.page);
+
+      // Fetch all products without pagination limit (use a very high limit)
+      queryParams.append("limit", "9999");
 
       const res = await axiosInstance.get(`/product?${queryParams.toString()}`);
       return res.data;
