@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
     ShoppingCart,
     Clock,
@@ -20,14 +21,25 @@ import {
     AlertTriangle,
     Loader,
 } from "lucide-react";
-import { fetchAllOrders, updateOrderStatus, deleteOrderAPI, fetchOrderDetails } from "../../services/ordersAdminService";
+import {
+    fetchAdminOrders,
+    fetchAdminOrderStats,
+    updateAdminOrderStatus,
+    deleteAdminOrder
+} from "../../store/slices/adminSlice";
+import { fetchOrderDetails } from "../../services/ordersAdminService";
 import { formatPrice } from "../../utils/currencyFormatter";
 import { formatDate } from "../../utils/formatters";
 import { toast } from "react-toastify";
 
 const AdminOrders = () => {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useDispatch();
+    const {
+        orders,
+        orderStats: stats,
+        ordersLoading: loading
+    } = useSelector((state) => state.admin);
+
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -37,25 +49,28 @@ const AdminOrders = () => {
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [initLoading, setInitLoading] = useState(true);
 
     useEffect(() => {
-        loadOrders();
-    }, []);
+        loadData();
 
-    const loadOrders = async () => {
-        try {
-            setLoading(true);
-            const response = await fetchAllOrders();
-            if (response.success) {
-                setOrders(response.orders || []);
-            }
-        } catch (error) {
-            console.error("Error loading orders:", error);
-            toast.error("Failed to load orders");
-        } finally {
-            setLoading(false);
-        }
+        // Poll for updates every 30 seconds
+        const pollInterval = setInterval(() => {
+            dispatch(fetchAdminOrders());
+            dispatch(fetchAdminOrderStats());
+        }, 30000);
+
+        return () => clearInterval(pollInterval);
+    }, [dispatch]);
+
+    const loadData = () => {
+        Promise.all([
+            dispatch(fetchAdminOrders()),
+            dispatch(fetchAdminOrderStats())
+        ]).finally(() => setInitLoading(false));
     };
+
+    // ... (rest of functions)
 
     const loadOrderDetails = async (orderId) => {
         try {
@@ -73,20 +88,24 @@ const AdminOrders = () => {
         }
     };
 
+    // ... (rest of component)
+
+
     const handleStatusUpdate = async (orderId, newStatus) => {
         try {
             setUpdatingStatus(true);
-            const response = await updateOrderStatus(orderId, newStatus);
-            if (response.success) {
-                toast.success(`Order #${orderId} marked as ${newStatus}`);
-                loadOrders();
+            const resultAction = await dispatch(updateAdminOrderStatus({ orderId, status: newStatus }));
+
+            if (updateAdminOrderStatus.fulfilled.match(resultAction)) {
                 // Update local state if modal is open
                 if (selectedOrder?.id === orderId) {
                     setSelectedOrder({ ...selectedOrder, order_status: newStatus });
                 }
+                // Refresh stats
+                dispatch(fetchAdminOrderStats());
             }
         } catch (error) {
-            toast.error("Failed to update status");
+            // Handled in slice
         } finally {
             setUpdatingStatus(false);
         }
@@ -95,17 +114,17 @@ const AdminOrders = () => {
     const handleDeleteOrder = async () => {
         try {
             setDeleting(true);
-            await deleteOrderAPI(selectedOrder.id);
+            const resultAction = await dispatch(deleteAdminOrder(selectedOrder.id));
 
-            // Remove from orders list
-            setOrders(orders.filter(order => order.id !== selectedOrder.id));
-            setShowDetailsModal(false);
-            setShowDeleteConfirm(false);
-            setSelectedOrder(null);
-            toast.success("Order deleted successfully");
+            if (deleteAdminOrder.fulfilled.match(resultAction)) {
+                // Refresh stats
+                dispatch(fetchAdminOrderStats());
+                setShowDetailsModal(false);
+                setShowDeleteConfirm(false);
+                setSelectedOrder(null);
+            }
         } catch (error) {
-            console.error("Error deleting order:", error);
-            toast.error("Failed to delete order");
+            // Handled in slice
         } finally {
             setDeleting(false);
         }
@@ -151,9 +170,9 @@ const AdminOrders = () => {
 
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
-                doc.text(`Order ID: ${order.id.slice(0, 8).toUpperCase()}`, 20, yPosition);
+                doc.text(`Order ID: ${order.id.slice(0, 8).toUpperCase()} `, 20, yPosition);
                 yPosition += 6;
-                doc.text(`Date: ${formatDate(order.created_at)}`, 20, yPosition);
+                doc.text(`Date: ${formatDate(order.created_at)} `, 20, yPosition);
                 yPosition += 8;
 
                 // Customer Info
@@ -161,9 +180,9 @@ const AdminOrders = () => {
                 doc.text('CUSTOMER', 20, yPosition);
                 yPosition += 6;
                 doc.setFont('helvetica', 'normal');
-                doc.text(`Name: ${order.user_name}`, 20, yPosition);
+                doc.text(`Name: ${order.user_name} `, 20, yPosition);
                 yPosition += 5;
-                doc.text(`Email: ${order.user_email}`, 20, yPosition);
+                doc.text(`Email: ${order.user_email} `, 20, yPosition);
                 yPosition += 10;
 
                 // Order Summary Table
@@ -176,15 +195,15 @@ const AdminOrders = () => {
 
                 doc.setFont('helvetica', 'normal');
                 doc.text('Order Items', 25, yPosition);
-                doc.text(`${formatPrice(order.items_price || 0)}`, 150, yPosition);
+                doc.text(`${formatPrice(order.items_price || 0)} `, 150, yPosition);
                 yPosition += 6;
 
                 doc.text('Tax (18%)', 25, yPosition);
-                doc.text(`${formatPrice(order.tax_price || 0)}`, 150, yPosition);
+                doc.text(`${formatPrice(order.tax_price || 0)} `, 150, yPosition);
                 yPosition += 6;
 
                 doc.text('Shipping', 25, yPosition);
-                doc.text(`${formatPrice(order.shipping_price || 0)}`, 150, yPosition);
+                doc.text(`${formatPrice(order.shipping_price || 0)} `, 150, yPosition);
                 yPosition += 8;
 
                 doc.setFillColor(0, 0, 0);
@@ -192,7 +211,7 @@ const AdminOrders = () => {
                 doc.setTextColor(255, 255, 255);
                 doc.setFont('helvetica', 'bold');
                 doc.text('TOTAL', 25, yPosition + 5);
-                doc.text(`${formatPrice(order.total_price)}`, 150, yPosition + 5);
+                doc.text(`${formatPrice(order.total_price)} `, 150, yPosition + 5);
 
                 yPosition += 15;
 
@@ -202,10 +221,10 @@ const AdminOrders = () => {
                 doc.text('PAYMENT STATUS', 20, yPosition);
                 yPosition += 6;
                 doc.setFont('helvetica', 'normal');
-                doc.text(order.paid_at ? `Paid on ${formatDate(order.paid_at)}` : 'Pending', 20, yPosition);
+                doc.text(order.paid_at ? `Paid on ${formatDate(order.paid_at)} ` : 'Pending', 20, yPosition);
 
                 // Save PDF
-                doc.save(`Invoice-${order.id.slice(0, 8)}.pdf`);
+                doc.save(`Invoice - ${order.id.slice(0, 8)}.pdf`);
                 toast.success('Invoice downloaded successfully!');
             };
 
@@ -237,27 +256,29 @@ const AdminOrders = () => {
         }
     };
 
+    // Derived from server stats
     const orderStats = {
-        total: orders.length,
-        processing: orders.filter((o) => o.order_status === "Processing").length,
-        shipped: orders.filter((o) => o.order_status === "Shipped").length,
-        totalRevenue: orders.reduce((sum, o) => sum + parseFloat(o.total_price || 0), 0),
+        total: stats?.total || 0,
+        processing: stats?.processing || 0,
+        shipped: stats?.shipped || 0,
+        totalRevenue: stats?.totalRevenue || 0,
     };
 
     // Reusable Stat Card
     const StatCard = ({ label, value, icon: Icon }) => (
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
             <div className="flex justify-between items-start mb-4">
-                <div className="p-3 rounded-xl bg-black/5 text-black">
+                <div className="p-3 rounded-2xl bg-gray-50 group-hover:bg-black group-hover:text-white transition-colors">
                     <Icon size={24} />
                 </div>
             </div>
-            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">{label}</p>
-            <h3 className="text-3xl font-black mt-1 text-black">{value}</h3>
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">{label}</p>
+            <h3 className="text-3xl font-black mt-2 text-black tracking-tight">{value}</h3>
         </div>
     );
 
-    if (loading) {
+
+    if (initLoading || (loading && orders.length === 0)) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
@@ -271,10 +292,10 @@ const AdminOrders = () => {
             {/* 1. Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-black tracking-tight mb-2 uppercase">
+                    <h1 className="text-4xl font-black text-black tracking-tighter mb-2 uppercase">
                         Order Management
                     </h1>
-                    <p className="text-gray-500">Track and manage customer orders.</p>
+                    <p className="text-gray-500 font-medium">Track and manage customer orders.</p>
                 </div>
             </div>
 
@@ -287,7 +308,7 @@ const AdminOrders = () => {
             </div>
 
             {/* 3. Filters */}
-            <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-2">
+            <div className="bg-white rounded-3xl p-2 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-2">
                 {/* Search */}
                 <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -322,7 +343,7 @@ const AdminOrders = () => {
             </div>
 
             {/* 4. Orders Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-100">
@@ -332,7 +353,7 @@ const AdminOrders = () => {
                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Date</th>
                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
                                 <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Total</th>
-                                <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Action</th>
+                                <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -385,18 +406,20 @@ const AdminOrders = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
                                             <span className="font-black text-black">{formatPrice(order.total_price)}</span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedOrder(order);
-                                                    setShowDetailsModal(true);
-                                                    loadOrderDetails(order.id);
-                                                }}
-                                                className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                                                title="View Details"
-                                            >
-                                                <Eye size={20} />
-                                            </button>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                                            <div className="flex items-center justify-end">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedOrder(order);
+                                                        setShowDetailsModal(true);
+                                                        loadOrderDetails(order.id);
+                                                    }}
+                                                    className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+                                                    title="View Details"
+                                                >
+                                                    <Eye size={20} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -426,7 +449,7 @@ const AdminOrders = () => {
                             <div>
                                 <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
                                     Order #{selectedOrder.id.slice(0, 8)}
-                                    <span className={`px-3 py-1 rounded-full text-[10px] border ${getStatusColor(selectedOrder.order_status)}`}>
+                                    <span className={`px - 3 py - 1 rounded - full text - [10px] border ${getStatusColor(selectedOrder.order_status)} `}>
                                         {selectedOrder.order_status}
                                     </span>
                                 </h3>
@@ -462,7 +485,7 @@ const AdminOrders = () => {
                                         <CreditCard size={14} /> Payment
                                     </p>
                                     <div>
-                                        <p className={`text-sm font-bold ${selectedOrder.paid_at ? 'text-green-600' : 'text-red-600'}`}>
+                                        <p className={`text - sm font - bold ${selectedOrder.paid_at ? 'text-green-600' : 'text-red-600'} `}>
                                             {selectedOrder.paid_at ? "Paid via Card" : "Payment Pending"}
                                         </p>
                                         {selectedOrder.paid_at && (
@@ -546,7 +569,7 @@ const AdminOrders = () => {
 
                         {/* Footer Actions */}
                         <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3 justify-between">
-                            {selectedOrder.order_status === "Delivered" && (
+                            {(selectedOrder.order_status === "Delivered" || selectedOrder.order_status === "Cancelled") && (
                                 <button
                                     onClick={() => setShowDeleteConfirm(true)}
                                     className="px-6 py-3 font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 border-2 border-red-200"
@@ -554,7 +577,7 @@ const AdminOrders = () => {
                                     <Trash2 size={18} /> Delete Order
                                 </button>
                             )}
-                            {selectedOrder.order_status !== "Delivered" && (
+                            {selectedOrder.order_status !== "Delivered" && selectedOrder.order_status !== "Cancelled" && (
                                 <div></div>
                             )}
                             <div className="flex gap-3">

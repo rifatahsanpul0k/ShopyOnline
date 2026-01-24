@@ -41,12 +41,22 @@ export const updatePaymentStatus = async (req, res) => {
         const { orderId } = req.params;
         const { paymentStatus } = req.body;
 
+        // Map status values to match database schema (capitalized)
+        const statusMap = {
+            'succeeded': 'Paid',
+            'paid': 'Paid',
+            'pending': 'Pending',
+            'failed': 'Failed'
+        };
+
+        const dbPaymentStatus = statusMap[paymentStatus.toLowerCase()] || 'Pending';
+
         const { rows } = await database.query(
-            "UPDATE payments SET payment_status = $1, updated_at = NOW() WHERE order_id = $2 RETURNING *",
-            [paymentStatus, orderId]
+            "UPDATE payments SET payment_status = $1 WHERE order_id = $2 RETURNING *",
+            [dbPaymentStatus, orderId]
         );
 
-        console.log("Update Payment Status Result:", { orderId, paymentStatus, rowCount: rows.length });
+        console.log("Update Payment Status Result:", { orderId, paymentStatus, dbPaymentStatus, rowCount: rows.length });
 
         if (rows.length === 0) {
             return res.status(404).json({
@@ -56,15 +66,15 @@ export const updatePaymentStatus = async (req, res) => {
         }
 
         // Also update order payment status and set paid_at timestamp if payment is successful
-        if (paymentStatus === "succeeded" || paymentStatus === "paid") {
+        if (dbPaymentStatus === "Paid") {
             await database.query(
                 "UPDATE orders SET payment_status = $1, paid_at = NOW() WHERE id = $2",
-                [paymentStatus, orderId]
+                [dbPaymentStatus, orderId]
             );
         } else {
             await database.query(
                 "UPDATE orders SET payment_status = $1 WHERE id = $2",
-                [paymentStatus, orderId]
+                [dbPaymentStatus, orderId]
             );
         }
 

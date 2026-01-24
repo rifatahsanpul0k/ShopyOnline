@@ -17,6 +17,18 @@ export async function createOrdersTable() {
         );
     `;
         await database.query(query);
+
+        // Migration: Add deleted_by_admin column if it doesn't exist
+        const migrationQuery = `
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'deleted_by_admin') THEN
+                    ALTER TABLE orders ADD COLUMN deleted_by_admin BOOLEAN DEFAULT false;
+                END IF;
+            END $$;
+        `;
+        await database.query(migrationQuery);
+
     } catch (error) {
         console.error("❌ Failed To Create Orders Table.", error);
         process.exit(1);

@@ -7,6 +7,7 @@ import {
   updateOrderStatus,
   deleteUserOrder,
   deleteAdminOrder,
+  getOrderStats,
 } from "../controllers/orderController.js";
 import {
   isAuthenticated,
@@ -19,6 +20,7 @@ router.post("/new", isAuthenticated, placeNewOrder);
 router.get("/me", isAuthenticated, fetchMyOrders);
 router.get("/admin/getall", isAuthenticated, authorizedRoles("Admin"), fetchAllOrders);
 router.put("/admin/update/:orderId", isAuthenticated, authorizedRoles("Admin"), updateOrderStatus);
+router.get("/admin/stats", isAuthenticated, authorizedRoles("Admin"), getOrderStats);
 router.delete("/admin/delete/:orderId", isAuthenticated, authorizedRoles("Admin"), deleteAdminOrder);
 router.get("/:orderId", isAuthenticated, fetchSingleOrder);
 router.delete("/:orderId", isAuthenticated, deleteUserOrder);
