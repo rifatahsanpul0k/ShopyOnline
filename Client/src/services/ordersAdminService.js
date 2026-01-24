@@ -25,3 +25,9 @@ export const deleteOrderAPI = async (orderId) => {
     const response = await axiosInstance.delete(`/order/admin/delete/${orderId}`);
     return response.data;
 };
+
+// Get single order with items (Admin)
+export const fetchOrderDetails = async (orderId) => {
+    const response = await axiosInstance.get(`/order/${orderId}`);
+    return response.data;
+};

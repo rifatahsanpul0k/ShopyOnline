@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { Minus, Plus, Star, Check, ChevronRight, SlidersHorizontal, X } from "lucide-react"; // Added Icons
+import { Minus, Plus, Star, Check, ChevronRight, SlidersHorizontal, X, Edit, Trash2 } from "lucide-react"; // Added Icons
 import StockBadge from "../components/ui/StockBadge";
 import { formatPrice } from "../utils/currencyFormatter";
 import {
   fetchSingleProduct,
   clearProductDetails,
   postReview,
+  checkUserPurchase,
+  deleteReview,
 } from "../store/slices/productSlice";
 import { addToCart } from "../store/slices/cartSlice";
 import { toast } from "react-toastify";
@@ -25,19 +27,26 @@ const ProductDetail = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+  const [editingReview, setEditingReview] = useState(null);
+  const [userReview, setUserReview] = useState(null);
 
   // Data State
-  const { productDetails, loading, isPostingReview } = useSelector((state) => state.product);
+  const { productDetails, loading, isPostingReview, hasPurchased, checkingPurchase, isReviewDeleting } = useSelector((state) => state.product);
+  const { authUser } = useSelector((state) => state.auth);
 
   // Fetch product details on mount
   useEffect(() => {
     if (id) {
       dispatch(fetchSingleProduct(id));
+      // Check if user is logged in and has purchased this product
+      if (authUser) {
+        dispatch(checkUserPurchase(id));
+      }
     }
     return () => {
       dispatch(clearProductDetails());
     };
-  }, [dispatch, id]);
+  }, [dispatch, id, authUser]);
 
   // Set initial image when product loads
   useEffect(() => {
@@ -45,6 +54,16 @@ const ProductDetail = () => {
       setSelectedImage(productDetails.images[0].url);
     }
   }, [productDetails]);
+
+  // Check if user has already reviewed this product
+  useEffect(() => {
+    if (productDetails?.reviews && authUser) {
+      const existingReview = productDetails.reviews.find(
+        (review) => review.reviewer?.id === authUser.id
+      );
+      setUserReview(existingReview || null);
+    }
+  }, [productDetails, authUser]);
 
   // Loading State
   if (loading) {
@@ -111,12 +130,32 @@ const ProductDetail = () => {
     try {
       await dispatch(postReview({ productId: id, rating, comment })).unwrap();
       setShowReviewModal(false);
+      setEditingReview(null);
       setComment("");
       setRating(5);
       // Refresh product data to show new review
       dispatch(fetchSingleProduct(id));
     } catch (error) {
       console.error("Failed to post review:", error);
+    }
+  };
+
+  const handleEditReview = (review) => {
+    setEditingReview(review);
+    setRating(review.rating);
+    setComment(review.comment);
+    setShowReviewModal(true);
+  };
+
+  const handleDeleteReview = async (productId) => {
+    if (window.confirm("Are you sure you want to delete your review?")) {
+      try {
+        await dispatch(deleteReview(productId)).unwrap();
+        // Refresh product data to remove deleted review
+        dispatch(fetchSingleProduct(id));
+      } catch (error) {
+        console.error("Failed to delete review:", error);
+      }
     }
   };
 
@@ -326,8 +365,11 @@ const ProductDetail = () => {
           </div>
         </div>
 
+        {/* Horizontal Divider */}
+        <div className="border-t border-gray-200 mt-12 mb-8"></div>
+
         {/* Reviews Section (Formerly Tabs) */}
-        <div className="mt-16">
+        <div className="mt-8">
           <div className="py-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold flex items-center gap-2">
@@ -337,14 +379,39 @@ const ProductDetail = () => {
                 </span>
               </h3>
               <div className="flex gap-2">
-                <button className="bg-[#F0F0F0] hover:bg-gray-200 rounded-full w-12 h-12 flex items-center justify-center">
-                  <SlidersHorizontal className="w-5 h-5 text-black" />
-                </button>
-                <button
-                  onClick={() => setShowReviewModal(true)}
-                  className="bg-black text-white px-6 py-3 rounded-full font-medium text-sm">
-                  Write a Review
-                </button>
+                {authUser && hasPurchased && userReview && (
+                  <button
+                    onClick={() => {
+                      setEditingReview(userReview);
+                      setRating(userReview.rating);
+                      setComment(userReview.comment);
+                      setShowReviewModal(true);
+                    }}
+                    className="bg-green-600 text-white px-6 py-3 rounded-full font-medium text-sm hover:bg-green-700 transition flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    Edit Your Review
+                  </button>
+                )}
+                {authUser && hasPurchased && !userReview && (
+                  <button
+                    onClick={() => setShowReviewModal(true)}
+                    className="bg-black text-white px-6 py-3 rounded-full font-medium text-sm hover:bg-gray-800 transition">
+                    Write a Review
+                  </button>
+                )}
+                {authUser && !hasPurchased && !checkingPurchase && (
+                  <div className="bg-gray-100 text-gray-500 px-6 py-3 rounded-full font-medium text-sm cursor-not-allowed flex items-center gap-2">
+                    <span className="text-xs">🔒</span>
+                    Purchase to Review
+                  </div>
+                )}
+                {!authUser && (
+                  <button
+                    onClick={() => navigate('/auth/login')}
+                    className="bg-gray-100 text-black px-6 py-3 rounded-full font-medium text-sm hover:bg-gray-200 transition">
+                    Login to Review
+                  </button>
+                )}
               </div>
             </div>
 
@@ -354,7 +421,7 @@ const ProductDetail = () => {
                 product.reviews.map((review, i) => (
                   <div
                     key={review.review_id || i}
-                    className="border border-gray-200 rounded-[20px] p-6 lg:p-8"
+                    className="border border-gray-200 rounded-[20px] p-6 lg:p-8 relative"
                   >
                     <div className="flex justify-between mb-3">
                       <div className="flex text-yellow-400 gap-1">
@@ -373,15 +440,55 @@ const ProductDetail = () => {
                           />
                         ))}
                       </div>
+
+                      {/* Edit and Delete Buttons */}
+                      {authUser && review.reviewer?.id === authUser.id && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditReview(review)}
+                            className="p-2 hover:bg-gray-100 rounded-full transition"
+                            title="Edit review"
+                          >
+                            <Edit className="w-4 h-4 text-gray-600" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReview(id)}
+                            disabled={isReviewDeleting}
+                            className="p-2 hover:bg-red-50 rounded-full transition disabled:opacity-50"
+                            title="Delete review"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-bold text-lg">
-                        {review.reviewer?.name || "Anonymous"}
-                      </h4>
-                      <div className="bg-green-500 rounded-full p-[2px]">
-                        <Check size={10} className="text-white" />
+
+                    <div className="flex items-center gap-3 mb-3">
+                      {/* Avatar */}
+                      {review.reviewer?.avatar?.url ? (
+                        <img
+                          src={review.reviewer.avatar.url}
+                          alt={review.reviewer.name}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-lg">
+                          {review.reviewer?.name?.charAt(0).toUpperCase() || "A"}
+                        </div>
+                      )}
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-base">
+                            {review.reviewer?.name || "Anonymous"}
+                          </h4>
+                          <div className="bg-green-500 rounded-full p-[2px]">
+                            <Check size={10} className="text-white" />
+                          </div>
+                        </div>
                       </div>
                     </div>
+
                     <p className="text-gray-600 mb-4 text-sm leading-relaxed">
                       {review.comment}
                     </p>
@@ -413,13 +520,20 @@ const ProductDetail = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-8 max-w-lg w-full relative animate-in fade-in zoom-in duration-200">
             <button
-              onClick={() => setShowReviewModal(false)}
+              onClick={() => {
+                setShowReviewModal(false);
+                setEditingReview(null);
+                setComment("");
+                setRating(5);
+              }}
               className="absolute top-4 right-4 text-gray-400 hover:text-black transition"
             >
               <X size={24} />
             </button>
 
-            <h2 className="text-2xl font-black uppercase mb-6">Write a Review</h2>
+            <h2 className="text-2xl font-black uppercase mb-6">
+              {editingReview ? "Edit Review" : "Write a Review"}
+            </h2>
 
             <form onSubmit={handleReviewSubmit}>
               <div className="mb-6">

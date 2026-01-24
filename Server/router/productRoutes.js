@@ -1,5 +1,6 @@
 import express from "express";
 import {
+    checkUserPurchase,
     createProduct,
     deleteProduct,
     deleteReview,
@@ -22,6 +23,8 @@ router.put("/admin/update/:productId", isAuthenticated, authorizedRoles("Admin")
 router.delete("/admin/delete/:productId", isAuthenticated, authorizedRoles("Admin"), deleteProduct);
 
 router.get("/singleProduct/:productId", fetchSingleProduct);
+
+router.get("/check-purchase/:productId", isAuthenticated, checkUserPurchase);
 
 router.put("/post-new/review/:productId", isAuthenticated, postProductReview);
 

@@ -24,6 +24,10 @@ import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Orders from "./pages/Orders";
 import UserProfile from "./pages/UserProfile";
+import NewArrivals from "./pages/NewArrivals";
+import TopRated from "./pages/TopRated";
+import ContactUs from "./pages/ContactUs";
+import FAQ from "./pages/FAQ";
 
 // Auth Pages
 import Login from "./pages/Auth/Login";
@@ -80,6 +84,7 @@ const App = () => {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="profile" element={<AdminProfile />} />
         </Route>
 
         {/* Main App Routes (With Navbar/Footer) */}
@@ -97,6 +102,10 @@ const App = () => {
                     <Route path="/products" element={<Products />} />
                     <Route path="/product/:id" element={<ProductDetail />} />
                     <Route path="/cart" element={<Cart />} />
+                    <Route path="/new-arrivals" element={<NewArrivals />} />
+                    <Route path="/top-rated" element={<TopRated />} />
+                    <Route path="/contact" element={<ContactUs />} />
+                    <Route path="/faq" element={<FAQ />} />
 
                     {/* Auth Routes */}
                     <Route path="/auth/login" element={<Login />} />

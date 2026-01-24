@@ -226,16 +226,11 @@ export const updateProfile = catchAsyncErrors(async (req, res, next) => {
     const { name, email, phone, address } = req.body;
 
     // Validate required fields
-    if (!name || !email || !phone || !address) {
-        return next(new ErrorHandler("Please provide all required fields.", 400));
+    if (!name || !email) {
+        return next(new ErrorHandler("Please provide name and email.", 400));
     }
-    if (
-        name.trim().length === 0 ||
-        email.trim().length === 0 ||
-        phone.trim().length === 0 ||
-        address.trim().length === 0
-    ) {
-        return next(new ErrorHandler("Fields cannot be empty.", 400));
+    if (name.trim().length === 0 || email.trim().length === 0) {
+        return next(new ErrorHandler("Name and email cannot be empty.", 400));
     }
 
     let avatarData = {};
@@ -260,19 +255,31 @@ export const updateProfile = catchAsyncErrors(async (req, res, next) => {
         };
     }
 
-    let user;
     // Update user profile in the database
-    if (Object.keys(avatarData).length === 0) {
-        user = await database.query(
-            "UPDATE users SET name = $1, email = $2, phone = $3, address = $4 WHERE id = $5 RETURNING *",
-            [name, email, phone, address, req.user.id]
-        );
-    } else {
-        user = await database.query(
-            "UPDATE users SET name = $1, email = $2, phone = $3, address = $4, avatar = $5 WHERE id = $6 RETURNING *",
-            [name, email, phone, address, avatarData, req.user.id]
-        );
+    const updateFields = [name, email];
+    let query = "UPDATE users SET name = $1, email = $2";
+    let paramIndex = 3;
+
+    if (phone !== undefined && phone !== null) {
+        query += `, phone = $${paramIndex}`;
+        updateFields.push(phone);
+        paramIndex++;
     }
+    if (address !== undefined && address !== null) {
+        query += `, address = $${paramIndex}`;
+        updateFields.push(address);
+        paramIndex++;
+    }
+    if (Object.keys(avatarData).length > 0) {
+        query += `, avatar = $${paramIndex}`;
+        updateFields.push(avatarData);
+        paramIndex++;
+    }
+
+    query += ` WHERE id = $${paramIndex} RETURNING *`;
+    updateFields.push(req.user.id);
+
+    const user = await database.query(query, updateFields);
 
     // Send response
     res.status(200).json({

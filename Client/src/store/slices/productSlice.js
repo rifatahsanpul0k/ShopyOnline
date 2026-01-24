@@ -69,6 +69,42 @@ export const postReview = createAsyncThunk(
   }
 );
 
+// Check if user has purchased a product
+export const checkUserPurchase = createAsyncThunk(
+  "product/checkUserPurchase",
+  async (productId, thunkAPI) => {
+    try {
+      const res = await axiosInstance.get(
+        `/product/check-purchase/${productId}`
+      );
+      return res.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Failed to check purchase status"
+      );
+    }
+  }
+);
+
+// Delete a product review
+export const deleteReview = createAsyncThunk(
+  "product/deleteReview",
+  async (productId, thunkAPI) => {
+    try {
+      const res = await axiosInstance.delete(
+        `/product/delete/review/${productId}`
+      );
+      toast.success("Review deleted successfully");
+      return res.data;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete review");
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Failed to delete review"
+      );
+    }
+  }
+);
+
 const productSlice = createSlice({
   name: "product",
   initialState: {
@@ -82,6 +118,8 @@ const productSlice = createSlice({
     isReviewDeleting: false,
     isPostingReview: false,
     productReviews: [],
+    hasPurchased: false,
+    checkingPurchase: false,
     error: null,
   },
   reducers: {
@@ -151,6 +189,36 @@ const productSlice = createSlice({
       })
       .addCase(postReview.rejected, (state, action) => {
         state.isPostingReview = false;
+        state.error = action.payload;
+      })
+
+      // Check User Purchase
+      .addCase(checkUserPurchase.pending, (state) => {
+        state.checkingPurchase = true;
+      })
+      .addCase(checkUserPurchase.fulfilled, (state, action) => {
+        state.checkingPurchase = false;
+        state.hasPurchased = action.payload.hasPurchased;
+      })
+      .addCase(checkUserPurchase.rejected, (state, action) => {
+        state.checkingPurchase = false;
+        state.hasPurchased = false;
+        state.error = action.payload;
+      })
+
+      // Delete Review
+      .addCase(deleteReview.pending, (state) => {
+        state.isReviewDeleting = true;
+      })
+      .addCase(deleteReview.fulfilled, (state, action) => {
+        state.isReviewDeleting = false;
+        // Update product ratings after deletion
+        if (state.productDetails && action.payload.product) {
+          state.productDetails.ratings = action.payload.product.ratings;
+        }
+      })
+      .addCase(deleteReview.rejected, (state, action) => {
+        state.isReviewDeleting = false;
         state.error = action.payload;
       });
   },
