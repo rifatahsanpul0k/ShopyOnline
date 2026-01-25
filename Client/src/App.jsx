@@ -27,6 +27,7 @@ import NewArrivals from "./pages/NewArrivals";
 import TopRated from "./pages/TopRated";
 import ContactUs from "./pages/ContactUs";
 import FAQ from "./pages/FAQ";
+import AboutUs from "./pages/AboutUs";
 
 // Auth Pages
 import Login from "./pages/Auth/Login";
@@ -102,6 +103,7 @@ const App = () => {
                     <Route path="/top-rated" element={<TopRated />} />
                     <Route path="/contact" element={<ContactUs />} />
                     <Route path="/faq" element={<FAQ />} />
+                    <Route path="/about" element={<AboutUs />} />
 
                     {/* Auth Routes */}
                     <Route path="/auth/login" element={<Login />} />
